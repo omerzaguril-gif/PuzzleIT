@@ -1,0 +1,717 @@
+/* סגנונות פיצוח מילים — הועתקו מ-word-crack-solo.html, עם prefix של .wc */
+.wc{
+    --cream:#FAF5EC;
+    --ink:#2B2A28;
+    --muted:#8A8478;
+    --accent:#C1852F;
+    --accent-dark:#8f6220;
+    --good:#6E8B5C;
+    --good-bg:#EDF1E5;
+    --bad:#B14A4A;
+    --card-bg:#fff;
+    --line:#E7E0D2;
+  }
+
+.wc *{box-sizing:border-box;}
+
+.wc{
+    margin:0;
+    min-height:calc(100vh - 48px);
+    background:var(--cream);
+    color:var(--ink);
+    font-family:'Rubik', sans-serif;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+  }
+
+.wc .wrap{
+    width:100%;
+    max-width:440px;
+  }
+
+.wc h1{
+    font-family:'Frank Ruhl Libre', serif;
+    font-weight:900;
+    font-size:30px;
+    text-align:center;
+    margin:0 0 4px 0;
+  }
+
+.wc .tagline{
+    text-align:center;
+    color:var(--muted);
+    font-size:14px;
+    margin-bottom:22px;
+  }
+
+.wc .hud{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:16px;
+  }
+
+.wc .hud .stat{
+    background:var(--card-bg);
+    border:1.5px solid var(--line);
+    border-radius:12px;
+    padding:10px 16px;
+    text-align:center;
+    min-width:100px;
+  }
+
+.wc .hud .stat .num{
+    font-family:'Frank Ruhl Libre', serif;
+    font-weight:900;
+    font-size:26px;
+    line-height:1;
+  }
+
+.wc .hud .stat .label{
+    font-size:11px;
+    color:var(--muted);
+    margin-top:3px;
+  }
+
+.wc #timer.low .num{ color:var(--bad); }
+
+.wc .card{
+    background:var(--card-bg);
+    border:1.5px solid var(--line);
+    border-radius:18px;
+    padding:28px 22px;
+    text-align:center;
+    box-shadow:0 10px 30px rgba(43,42,40,0.06);
+  }
+
+.wc .clue-label{
+    display:flex;
+    justify-content:space-between;
+    font-size:12px;
+    color:var(--muted);
+    letter-spacing:.3px;
+    margin-bottom:10px;
+  }
+
+.wc .clue-count{
+    background:var(--good-bg);
+    color:var(--good);
+    border-radius:20px;
+    padding:2px 10px;
+    font-weight:700;
+  }
+
+.wc .clues{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    margin-bottom:16px;
+    min-height:44px;
+  }
+
+.wc .clue-word{
+    font-family:'Frank Ruhl Libre', serif;
+    font-weight:700;
+    font-size:30px;
+    color:var(--accent-dark);
+    animation:wc-pop .25s ease;
+  }
+
+.wc .clue-word.secondary{
+    font-size:19px;
+    color:var(--muted);
+    font-weight:500;
+  }
+
+.wc .solved-reveal{
+    font-family:'Frank Ruhl Libre', serif;
+    font-weight:900;
+    font-size:32px;
+    color:var(--good);
+    animation:wc-pop .2s ease;
+  }
+
+@keyframes wc-pop{
+    from{ transform:scale(.85); opacity:0; }
+    to{ transform:scale(1); opacity:1; }
+  }
+
+.wc input#guess{
+    width:100%;
+    padding:14px 16px;
+    font-size:18px;
+    font-family:'Rubik', sans-serif;
+    border:2px solid var(--line);
+    border-radius:12px;
+    text-align:center;
+    background:var(--cream);
+    color:var(--ink);
+    outline:none;
+    margin-bottom:14px;
+  }
+
+.wc input#guess:focus{ border-color:var(--accent); }
+
+.wc input#guess.wrong{
+    border-color:var(--bad);
+    animation:wc-shake .3s ease;
+  }
+
+@keyframes wc-shake{
+    0%,100%{ transform:translateX(0); }
+    25%{ transform:translateX(-6px); }
+    75%{ transform:translateX(6px); }
+  }
+
+.wc button{
+    font-family:'Rubik', sans-serif;
+    font-weight:700;
+    font-size:15px;
+    border:none;
+    border-radius:12px;
+    padding:13px 10px;
+    cursor:pointer;
+    width:100%;
+  }
+
+.wc #guessBtn{
+    background:var(--ink);
+    color:var(--cream);
+  }
+
+.wc #guessBtn:hover{ background:#000; }
+
+.wc .action-row{
+    display:flex;
+    gap:10px;
+  }
+
+.wc .action-row button{ margin-bottom:0; width:auto; }
+
+.wc .action-row #guessBtn{ flex:1; }
+
+.wc .skip-btn{
+    background:none;
+    color:var(--muted);
+    border:1.5px solid var(--line);
+    flex:0 0 auto;
+    width:auto;
+    padding:13px 18px;
+  }
+
+.wc .skip-btn:hover{ color:var(--ink); border-color:var(--ink); }
+
+.wc .feedback{
+    min-height:20px;
+    font-size:13px;
+    margin-top:10px;
+    color:var(--muted);
+  }
+
+.wc .feedback.correct{ color:var(--good); font-weight:700; }
+
+.wc .wrong-guesses{
+    margin-top:16px;
+    padding-top:14px;
+    border-top:1px dashed var(--line);
+    text-align:center;
+  }
+
+.wc .wrong-guesses .wg-label{
+    font-size:11px;
+    color:var(--muted);
+    margin-bottom:6px;
+  }
+
+.wc .wg-list{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+    justify-content:center;
+  }
+
+.wc .wg-chip{
+    font-size:12px;
+    color:var(--muted);
+    text-decoration:line-through;
+    background:var(--cream);
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:3px 9px;
+  }
+
+.wc /* Start / End overlays */
+  .overlay{
+    background:var(--card-bg);
+    border:1.5px solid var(--line);
+    border-radius:18px;
+    padding:36px 24px;
+    text-align:center;
+    box-shadow:0 10px 30px rgba(43,42,40,0.06);
+  }
+
+.wc .overlay h2{
+    font-family:'Frank Ruhl Libre', serif;
+    font-size:24px;
+    margin:0 0 10px 0;
+  }
+
+.wc .overlay p{
+    color:var(--muted);
+    font-size:14px;
+    line-height:1.7;
+    margin-bottom:22px;
+  }
+
+.wc .rules-list{
+    text-align:right;
+    margin:0 0 26px 0;
+    padding-inline-start:22px;
+    color:var(--ink);
+    font-size:15px;
+    line-height:1.9;
+  }
+
+.wc .rules-list li{ margin-bottom:6px; }
+
+.wc .big-btn{
+    font-size:19px;
+    padding:20px 16px;
+    border-radius:14px;
+  }
+
+.wc .overlay .score-num{
+    font-family:'Frank Ruhl Libre', serif;
+    font-weight:900;
+    font-size:56px;
+    color:var(--accent-dark);
+    line-height:1;
+    margin-bottom:4px;
+  }
+
+.wc .overlay button{
+    background:var(--ink);
+    color:var(--cream);
+  }
+
+.wc .overlay button:hover{ background:#000; }
+
+.wc .report{
+    margin-top:22px;
+    text-align:right;
+    max-height:320px;
+    overflow-y:auto;
+    border-top:1px dashed var(--line);
+    padding-top:16px;
+  }
+
+.wc .report-item{
+    margin-bottom:14px;
+    padding-bottom:12px;
+    border-bottom:1px solid var(--line);
+  }
+
+.wc .report-item:last-child{
+    border-bottom:none;
+    margin-bottom:0;
+  }
+
+.wc .report-head{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-family:'Frank Ruhl Libre', serif;
+    font-weight:700;
+    font-size:18px;
+  }
+
+.wc .report-icon{
+    font-size:16px;
+    flex:none;
+    width:20px;
+    text-align:center;
+  }
+
+.wc .report-icon.solved{ color:var(--good); }
+
+.wc .report-icon.unsolved{ color:var(--bad); }
+
+.wc .report-pts{
+    margin-inline-start:auto;
+    font-size:12px;
+    font-weight:700;
+    color:var(--accent-dark);
+    font-family:'Rubik', sans-serif;
+  }
+
+.wc .report-detail{
+    font-size:12.5px;
+    color:var(--muted);
+    margin-top:5px;
+    padding-inline-start:28px;
+    line-height:1.6;
+  }
+
+.wc .report-detail b{ color:var(--ink); }
+
+.wc .report-empty{
+    text-align:center;
+    color:var(--muted);
+    font-size:13px;
+  }
+
+.wc .hidden{ display:none !important; }
+
+.wc /* ---------- Admin gate ---------- */
+  .admin-gate-text{
+    color:var(--muted);
+    font-size:14px;
+    line-height:1.6;
+    margin-bottom:18px;
+  }
+
+.wc #adminEmailInput{
+    width:100%;
+    padding:14px 16px;
+    font-size:15px;
+    font-family:'Rubik', sans-serif;
+    border:2px solid var(--line);
+    border-radius:12px;
+    text-align:center;
+    background:var(--cream);
+    color:var(--ink);
+    outline:none;
+    margin-bottom:8px;
+    direction:ltr;
+  }
+
+.wc #adminEmailInput:focus{ border-color:var(--accent); }
+
+.wc /* ---------- Admin editor (full screen) ---------- */
+  .admin-editor{
+    position:fixed;
+    inset:0;
+    background:var(--cream);
+    z-index:40;
+    display:flex;
+    flex-direction:column;
+    padding:16px;
+  }
+
+.wc .admin-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+    margin-bottom:12px;
+    flex-wrap:wrap;
+  }
+
+.wc .admin-back-btn,
+.wc .admin-export-btn{
+    width:auto;
+    background:var(--card-bg);
+    border:1.5px solid var(--line);
+    color:var(--ink);
+    font-size:13px;
+    padding:9px 14px;
+    border-radius:10px;
+  }
+
+.wc .admin-export-btn{ color:var(--accent-dark); border-color:var(--accent); }
+
+.wc .admin-header-title{
+    font-family:'Frank Ruhl Libre', serif;
+    font-weight:700;
+    font-size:16px;
+  }
+
+.wc .admin-header-title span{
+    font-size:12px;
+    color:var(--muted);
+    font-weight:400;
+    font-family:'Rubik', sans-serif;
+  }
+
+.wc .admin-search{
+    width:100%;
+    padding:12px 14px;
+    font-size:15px;
+    font-family:'Rubik', sans-serif;
+    border:2px solid var(--line);
+    border-radius:12px;
+    text-align:right;
+    background:var(--card-bg);
+    color:var(--ink);
+    outline:none;
+    margin-bottom:12px;
+  }
+
+.wc .admin-search:focus{ border-color:var(--accent); }
+
+.wc .admin-list{
+    flex:1;
+    overflow-y:auto;
+    max-width:480px;
+    width:100%;
+    margin:0 auto;
+  }
+
+.wc .admin-word-row{
+    background:var(--card-bg);
+    border:1.5px solid var(--line);
+    border-radius:12px;
+    padding:12px 14px;
+    margin-bottom:8px;
+    cursor:pointer;
+  }
+
+.wc .admin-word-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+  }
+
+.wc .admin-word-name{
+    font-family:'Frank Ruhl Libre', serif;
+    font-weight:700;
+    font-size:16px;
+  }
+
+.wc .admin-word-name.overridden::after{
+    content:" ✏️";
+    font-size:12px;
+  }
+
+.wc .admin-word-preview{
+    font-size:12px;
+    color:var(--muted);
+    margin-top:4px;
+  }
+
+.wc .admin-word-editor{
+    margin-top:12px;
+    padding-top:12px;
+    border-top:1px dashed var(--line);
+  }
+
+.wc .admin-clue-row{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    margin-bottom:8px;
+  }
+
+.wc .admin-clue-num{
+    font-size:11px;
+    color:var(--muted);
+    width:16px;
+    flex:none;
+  }
+
+.wc .admin-clue-input{
+    flex:1;
+    padding:9px 10px;
+    font-size:14px;
+    font-family:'Rubik', sans-serif;
+    border:1.5px solid var(--line);
+    border-radius:8px;
+    text-align:right;
+    background:var(--cream);
+    color:var(--ink);
+    outline:none;
+  }
+
+.wc .admin-clue-input:focus{ border-color:var(--accent); }
+
+.wc .admin-reorder-btns{
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+  }
+
+.wc .admin-reorder-btns button{
+    width:24px;
+    padding:2px 0;
+    font-size:11px;
+    border-radius:5px;
+    background:var(--line);
+    color:var(--ink);
+  }
+
+.wc .admin-reorder-btns button:disabled{
+    opacity:0.3;
+    cursor:default;
+  }
+
+.wc .admin-word-actions{
+    display:flex;
+    gap:8px;
+    margin-top:6px;
+  }
+
+.wc .admin-reset-btn{
+    width:auto;
+    background:none;
+    color:var(--bad);
+    border:1.5px solid var(--line);
+    font-size:12px;
+    padding:8px 12px;
+  }
+
+.wc .admin-saved-tag{
+    font-size:11px;
+    color:var(--good);
+    align-self:center;
+  }
+
+.wc /* ---------- Export modal ---------- */
+  .export-modal-card{ max-width:480px; }
+
+.wc .export-textarea{
+    width:100%;
+    height:160px;
+    font-family:monospace;
+    font-size:11px;
+    direction:ltr;
+    text-align:left;
+    padding:10px;
+    border:1.5px solid var(--line);
+    border-radius:10px;
+    background:var(--cream);
+    color:var(--ink);
+    margin-bottom:14px;
+    resize:vertical;
+  }
+
+.wc /* ---------- Main menu tile ---------- */
+  .tile{
+    background:var(--card-bg);
+    border:1.5px solid var(--line);
+    border-radius:18px;
+    padding:40px 24px;
+    text-align:center;
+    cursor:pointer;
+    box-shadow:0 10px 30px rgba(43,42,40,0.06);
+    transition:transform .15s ease, box-shadow .15s ease;
+  }
+
+.wc .tile:hover{
+    transform:translateY(-2px);
+    box-shadow:0 14px 34px rgba(43,42,40,0.1);
+  }
+
+.wc .tile-icon{ font-size:44px; margin-bottom:10px; }
+
+.wc .tile-title{
+    font-family:'Frank Ruhl Libre', serif;
+    font-weight:700;
+    font-size:22px;
+    margin-bottom:4px;
+  }
+
+.wc .tile-sub{ font-size:13px; color:var(--muted); }
+
+.wc .tile-small{
+    padding:14px 20px;
+    margin-top:12px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    text-align:right;
+    justify-content:center;
+  }
+
+.wc .tile-icon-small{ font-size:20px; }
+
+.wc .tile-title-small{
+    font-size:14px;
+    font-weight:500;
+    color:var(--muted);
+  }
+
+.wc /* ---------- Exit button in HUD ---------- */
+  .hud{ position:relative; }
+
+.wc .exit-btn{
+    position:absolute;
+    top:-40px;
+    left:0;
+    width:auto;
+    background:none;
+    color:var(--muted);
+    border:1px solid var(--line);
+    border-radius:10px;
+    font-size:12px;
+    font-weight:500;
+    padding:6px 12px;
+  }
+
+.wc .exit-btn:hover{ color:var(--bad); border-color:var(--bad); }
+
+.wc .secondary-btn{
+    background:none;
+    color:var(--muted);
+    border:1.5px solid var(--line);
+    margin-top:10px;
+  }
+
+.wc .secondary-btn:hover{ color:var(--ink); border-color:var(--ink); }
+
+.wc /* ---------- Exit confirm modal ---------- */
+  .modal-backdrop{
+    position:fixed;
+    inset:0;
+    background:rgba(43,42,40,0.45);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+    z-index:50;
+  }
+
+.wc .modal-card{
+    background:var(--card-bg);
+    border-radius:16px;
+    padding:26px 22px;
+    max-width:340px;
+    width:100%;
+    text-align:center;
+    box-shadow:0 16px 40px rgba(0,0,0,0.18);
+  }
+
+.wc .modal-title{
+    font-family:'Frank Ruhl Libre', serif;
+    font-weight:700;
+    font-size:20px;
+    margin-bottom:8px;
+  }
+
+.wc .modal-text{
+    font-size:13px;
+    color:var(--muted);
+    line-height:1.6;
+    margin-bottom:20px;
+  }
+
+.wc .modal-btn-row{
+    display:flex;
+    gap:10px;
+  }
+
+.wc .modal-btn{
+    flex:1;
+    background:var(--line);
+    color:var(--ink);
+  }
+
+.wc .modal-btn.danger{
+    background:var(--bad);
+    color:#fff;
+  }
+
+.wc .modal-btn.danger:hover{ background:#8f3838; }
+
+.wc .modal-btn:not(.danger):hover{ background:#DAD2C0; }

@@ -1,0 +1,27 @@
+@import "tailwindcss";
+
+:root {
+  --hub-bg: #F6F4EF;
+  --hub-ink: #1C1B1A;
+  --hub-muted: #7A756C;
+  --hub-line: #E4DFD4;
+  --hub-accent: #2E5BFF;
+}
+* { box-sizing: border-box; }
+html, body, #root { min-height: 100%; }
+body {
+  margin: 0;
+  background: var(--hub-bg);
+  color: var(--hub-ink);
+  font-family: 'Assistant', system-ui, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+button { cursor: pointer; }
+button:disabled { cursor: default; }
+
+@keyframes hub-pop { from { transform: scale(.9); opacity: 0 } to { transform: scale(1); opacity: 1 } }
+.hub-pop { animation: hub-pop .2s ease; }
+@keyframes hub-shake { 0%,100% { transform: translateX(0) } 25% { transform: translateX(-7px) } 75% { transform: translateX(7px) } }
+.hub-shake { animation: hub-shake .35s ease-in-out; }
+@keyframes hub-fade-up { from { transform: translateY(8px); opacity: 0 } to { transform: none; opacity: 1 } }
+.hub-fade-up { animation: hub-fade-up .35s ease both; }
