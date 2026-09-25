@@ -1,6 +1,5 @@
 // PUZZLIT — לוגיקה לפי PUZZLIT_Visual_Puzzles.md (מאגר 196 החידות).
 import PUZZLES_RAW from './puzzles.json';
-import { dayNumber } from '../../lib/dates.js';
 
 export const PUZZLES = [...PUZZLES_RAW].sort((a, b) => a.num - b.num);
 export const IMAGE_BASE = `${import.meta.env.BASE_URL}puzzlit/images/`;
@@ -18,11 +17,6 @@ export const STAGES = [
 export const stageOf = p => Math.min(p.level, 6);
 export const stageGradient = s => `linear-gradient(135deg, ${s.from}, ${s.to})`;
 export const puzzlesInStage = n => PUZZLES.filter(p => stageOf(p) === n);
-
-// חידה יומית דטרמיניסטית: אותה חידה לכל השחקנים באותו יום (שעון ישראל).
-export function dailyPuzzle(date) {
-  return PUZZLES[dayNumber(date) % PUZZLES.length];
-}
 
 // §5: נרמול — הסרת ניקוד, פיסוק וכל הרווחים; איחוד אותיות סופיות.
 const FINALS = { 'ך': 'כ', 'ם': 'מ', 'ן': 'נ', 'ף': 'פ', 'ץ': 'צ' };

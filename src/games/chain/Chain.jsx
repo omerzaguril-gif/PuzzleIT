@@ -1,15 +1,15 @@
 // שרשרת — מבוסס על games/chain/ChainItHebrew.jsx. לוגיקת המשחק (אורך מילה לא נחשף, קלט אחרי הקידומת,
 // רמז = אות + 3 שניות, צ'יפים של ניחושים שגויים, displayWord) הועתקה כמו שהיא.
-// שינויים לפי ה-spec (LovableUpdate_ChainGame.md):
-//   - שרשרת אחת ליום לפי שעון ישראל, זהה לכל השחקנים, ניסיון אחד ליום (במקום בורר של כל השרשראות).
-//     עד שיהיה לוח שיבוץ בפאנל הניהול, השרשרת של היום נבחרת דטרמיניסטית מהמאגר לפי התאריך.
+// תוספות:
+//   - מסך רשימה של כל השרשראות, כולן פתוחות (עומר, 25.9.2026: אין כרגע הגבלה יומית).
+//     הנושא (theme) לא מוצג בכוונה, כי הוא מסגיר מילים מהשרשרת.
+//   - נקודות רק על השלמה ראשונה של כל שרשרת. שרשרת שהושלמה מציגה את התוצאה.
 //   - כפתור הרמז מציג "המילה חשופה" כשאין מה לחשוף.
-//   - ההתקדמות נשמרת: יציאה באמצע והשעון עוצר, חזרה ממשיכה מאותה נקודה.
+//   - ההתקדמות נשמרת לכל שרשרת: יציאה באמצע עוצרת את השעון, וחזרה ממשיכה מאותה נקודה.
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Lightbulb, Check, Trophy, Clock, X } from 'lucide-react';
+import { Lightbulb, Check, Trophy, Clock, X, ChevronLeft } from 'lucide-react';
 import { CHAINS } from './chains.js';
 import { SFX } from './sfx.js';
-import { israelDate, dayNumber } from '../../lib/dates.js';
 import { store } from '../../lib/store.js';
 import { chainToHub } from '../../lib/scoring.js';
 
@@ -18,24 +18,105 @@ const HINT_PENALTY = 3;
 const strip = s => (s || '').trim().replace(/[֑-ׇ]/g, '').replace(/[^א-ת]/g, '');
 const fmt = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
 
-export function chainForDate(date) {
-  return CHAINS[dayNumber(date) % CHAINS.length];
-}
+const BG = `radial-gradient(ellipse at top,#1B1B3A 0%,transparent 50%),
+            radial-gradient(ellipse at bottom,#10102A 0%,transparent 50%),#08081A`;
+const GRAD = 'linear-gradient(135deg,#22D3EE,#8B5CF6)';
 
 export default function Chain({ paused, onScore, setInProgress }) {
-  const today = useRef(israelDate()).current;
-  const chain = chainForDate(today);
+  const [progress, setProgress] = useState(null); // { chains: { [id]: savedState } }
+  const [current, setCurrent] = useState(null);   // index into CHAINS, null = list
 
-  const [loaded, setLoaded] = useState(false);
-  const [step, setStep] = useState(1);
-  const [revealed, setRevealed] = useState(1);
+  useEffect(() => {
+    store.loadProgress('chain')
+      .then(p => setProgress(p?.chains ? p : { chains: {} }))
+      .catch(() => setProgress({ chains: {} }));
+  }, []);
+
+  useEffect(() => { if (current == null) setInProgress(false); }, [current, setInProgress]);
+
+  const save = useCallback((id, data) => {
+    setProgress(prev => {
+      const next = { chains: { ...prev.chains, [id]: data } };
+      store.saveProgress('chain', next).catch(() => {});
+      return next;
+    });
+  }, []);
+
+  const nextIndex = i => {
+    for (let k = 1; k < CHAINS.length; k++) {
+      const j = (i + k) % CHAINS.length;
+      if (!progress.chains[CHAINS[j].id]?.finished) return j;
+    }
+    return null;
+  };
+
+  return (
+    <>
+      <style>{`
+        .chain-root, .chain-root * { direction: rtl; box-sizing: border-box; font-family: 'Assistant', system-ui, sans-serif; }
+        .chain-root .mono { font-family: 'Space Mono', monospace; }
+        @keyframes chain-shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-7px)} 75%{transform:translateX(7px)} }
+        .chain-root .shake { animation: chain-shake .4s ease-in-out; }
+        @keyframes chain-pop { from{transform:scale(.8);opacity:0} to{transform:scale(1);opacity:1} }
+        .chain-root .pop { animation: chain-pop .3s cubic-bezier(.2,.9,.3,1.4); }
+      `}</style>
+      <div dir="rtl" className="chain-root min-h-[calc(100vh-48px)] text-white px-5 py-6" style={{ background: BG }}>
+        {!progress ? <div className="text-center text-white/50 pt-10">טוען…</div>
+          : current == null ? <ChainList progress={progress} onPick={setCurrent} />
+          : (
+            <ChainGame key={CHAINS[current].id} chain={CHAINS[current]} index={current}
+              saved={progress.chains[CHAINS[current].id]} onSave={save}
+              paused={paused} onScore={onScore} setInProgress={setInProgress}
+              onList={() => setCurrent(null)}
+              onNext={nextIndex(current) != null ? () => setCurrent(nextIndex(current)) : null} />
+          )}
+      </div>
+    </>
+  );
+}
+
+function ChainList({ progress, onPick }) {
+  const doneCount = CHAINS.filter(c => progress.chains[c.id]?.finished).length;
+  return (
+    <div className="max-w-md mx-auto">
+      <div className="text-center mb-5">
+        <div className="text-[10px] tracking-[0.35em] text-white/45 font-bold">שרשרת</div>
+        <div className="font-black text-2xl">בחרו שרשרת</div>
+        <div className="text-white/45 text-sm mt-1">{doneCount} מתוך {CHAINS.length} הושלמו</div>
+      </div>
+      <div className="grid grid-cols-3 gap-2.5">
+        {CHAINS.map((c, i) => {
+          const s = progress.chains[c.id];
+          return (
+            <button key={c.id} onClick={() => onPick(i)}
+              className="rounded-2xl p-3 text-center border transition-transform hover:scale-[1.03]"
+              style={s?.finished
+                ? { background: 'linear-gradient(135deg,#22D3EE2e,#8B5CF62e)', borderColor: '#8B5CF688' }
+                : { background: 'rgba(255,255,255,.05)', borderColor: s ? '#22D3EE99' : 'rgba(255,255,255,.1)' }}>
+              <div className="font-black text-xl">{i + 1}</div>
+              <div className="text-[11px] text-white/55 font-bold">{c.difficulty} · {c.words.length - 1} מילים</div>
+              <div className="text-[11px] mt-1 mono font-bold" style={{ color: '#22D3EE', minHeight: 16 }}>
+                {s?.finished ? `✓ ${fmt(s.elapsed)}` : s ? 'בתהליך' : ''}
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function ChainGame({ chain, index, saved, onSave, paused, onScore, setInProgress, onList, onNext }) {
+  const loaded = true;
+  const [step, setStep] = useState(saved?.step ?? 1);
+  const [revealed, setRevealed] = useState(saved?.revealed ?? 1);
   const [guess, setGuess] = useState('');       // only the letters typed AFTER the revealed prefix
-  const [tried, setTried] = useState([]);       // wrong full-word attempts for the current blank
-  const [hints, setHints] = useState(0);
-  const [misses, setMisses] = useState(0);
+  const [tried, setTried] = useState(saved?.tried ?? []); // wrong full-word attempts for the current blank
+  const [hints, setHints] = useState(saved?.hints ?? 0);
+  const [misses, setMisses] = useState(saved?.misses ?? 0);
   const [shake, setShake] = useState(false);
-  const [elapsed, setElapsed] = useState(0);
-  const [hubPoints, setHubPoints] = useState(null);
+  const [elapsed, setElapsed] = useState(saved?.elapsed ?? 0);
+  const [hubPoints, setHubPoints] = useState(saved?.hubPoints ?? null);
   const inputRef = useRef(null);
 
   const done = step >= chain.words.length;
@@ -43,30 +124,14 @@ export default function Chain({ paused, onScore, setInProgress }) {
   const prefix = done ? '' : target.slice(0, revealed);
   const running = loaded && !done && !paused;
 
-  // Restore today's progress (or the finished result).
-  useEffect(() => {
-    let alive = true;
-    store.loadProgress('chain').then(p => {
-      if (!alive) return;
-      if (p && p.date === today && p.chainId === chain.id) {
-        setStep(p.step); setRevealed(p.revealed); setHints(p.hints);
-        setMisses(p.misses); setElapsed(p.elapsed); setTried(p.tried || []);
-        setHubPoints(p.hubPoints ?? null);
-      }
-      setLoaded(true);
-    }).catch(() => setLoaded(true));
-    return () => { alive = false; };
-  }, [today, chain.id]);
-
   // Persist on every meaningful change, and the running clock on the way out.
   const snapshot = useRef(null);
-  snapshot.current = { date: today, chainId: chain.id, step, revealed, hints, misses, elapsed, tried, finished: done, hubPoints };
+  snapshot.current = { step, revealed, hints, misses, elapsed, tried, finished: done, hubPoints };
   useEffect(() => {
-    if (loaded) store.saveProgress('chain', snapshot.current).catch(() => {});
-  }, [loaded, step, revealed, hints, misses, tried, done, hubPoints]);
-  useEffect(() => () => {
-    if (snapshot.current) store.saveProgress('chain', snapshot.current).catch(() => {});
-  }, []);
+    onSave(chain.id, snapshot.current);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, revealed, hints, misses, tried, done, hubPoints]);
+  useEffect(() => () => onSave(chain.id, snapshot.current), [chain.id, onSave]);
 
   useEffect(() => { setInProgress(loaded && !done); }, [loaded, done, setInProgress]);
 
@@ -91,7 +156,7 @@ export default function Chain({ paused, onScore, setInProgress }) {
         SFX.finish();
         const pts = chainToHub({ seconds: elapsed, blanks: chain.words.length - 1 });
         setHubPoints(pts);
-        onScore(pts, { chainId: chain.id, date: today, seconds: Math.round(elapsed * 10) / 10, hints, misses });
+        onScore(pts, { chainId: chain.id, seconds: Math.round(elapsed * 10) / 10, hints, misses });
       }
       return;
     }
@@ -105,7 +170,7 @@ export default function Chain({ paused, onScore, setInProgress }) {
     setShake(true);
     window.setTimeout(() => setShake(false), 400);
     setGuess('');
-  }, [chain, done, paused, guess, prefix, step, target, elapsed, hints, misses, onScore, today]);
+  }, [chain, done, paused, guess, prefix, step, target, elapsed, hints, misses, onScore]);
 
   const useHint = useCallback(() => {
     if (done || paused || revealed >= target.length) return;
@@ -126,21 +191,8 @@ export default function Chain({ paused, onScore, setInProgress }) {
   const fullyRevealed = !done && revealed >= target.length;
 
   return (
-    <>
-      <style>{`
-        .chain-root, .chain-root * { direction: rtl; box-sizing: border-box; font-family: 'Assistant', system-ui, sans-serif; }
-        .chain-root .mono { font-family: 'Space Mono', monospace; }
-        @keyframes chain-shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-7px)} 75%{transform:translateX(7px)} }
-        .chain-root .shake { animation: chain-shake .4s ease-in-out; }
-        @keyframes chain-pop { from{transform:scale(.8);opacity:0} to{transform:scale(1);opacity:1} }
-        .chain-root .pop { animation: chain-pop .3s cubic-bezier(.2,.9,.3,1.4); }
-      `}</style>
-
-      <div dir="rtl" className="chain-root min-h-[calc(100vh-48px)] text-white px-5 py-6"
-        style={{ background: `radial-gradient(ellipse at top,#1B1B3A 0%,transparent 50%),
-                              radial-gradient(ellipse at bottom,#10102A 0%,transparent 50%),#08081A` }}>
-        {!loaded ? <div className="text-center text-white/50 pt-10">טוען…</div> : (
         <div className="max-w-md mx-auto">
+          <button onClick={onList} className="text-sm font-bold text-white/50 mb-3">→ כל השרשראות</button>
 
           <div className="flex items-center justify-between mb-5">
             <div className="px-3 py-1.5 rounded-full bg-white/5 border border-white/10 flex items-center gap-1.5">
@@ -148,7 +200,7 @@ export default function Chain({ paused, onScore, setInProgress }) {
               <span className="mono text-sm font-bold">{fmt(elapsed)}</span>
             </div>
             <div className="text-center">
-              <div className="text-[10px] tracking-[0.35em] text-white/45 font-bold">השרשרת של היום</div>
+              <div className="text-[10px] tracking-[0.35em] text-white/45 font-bold">שרשרת {index + 1}</div>
               <div className="font-black text-lg -mt-0.5">חבר את המילים</div>
             </div>
             <div className="px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs font-bold text-white/60">
@@ -217,7 +269,13 @@ export default function Chain({ paused, onScore, setInProgress }) {
               {hubPoints != null && (
                 <div className="mt-3 text-sm font-bold text-white/80">+{hubPoints} לניקוד הכולל</div>
               )}
-              <div className="mt-5 text-white/60 text-sm">השרשרת הבאה תחכה לכם מחר 🌙</div>
+              {onNext && (
+                <button onClick={onNext}
+                  className="w-full mt-5 py-3.5 rounded-2xl font-black text-lg flex items-center justify-center gap-2"
+                  style={{ background: GRAD }}>
+                  <span>לשרשרת הבאה</span><ChevronLeft className="w-5 h-5" strokeWidth={3} />
+                </button>
+              )}
             </div>
           ) : (
             <div className="space-y-3">
@@ -272,8 +330,5 @@ export default function Chain({ paused, onScore, setInProgress }) {
             </div>
           )}
         </div>
-        )}
-      </div>
-    </>
   );
 }

@@ -74,7 +74,7 @@ src/games/wordcrack ← WordCrack.jsx (פורט 1:1 מה-HTML), words.js (449 ה
 src/games/chain     ← Chain.jsx, chains.js (31 שרשראות — מאוחד משני הסטים), sfx.js
 src/games/puzzlit   ← Puzzlit.jsx, logic.js, puzzles.json (196 החידות)
 public/puzzlit/images ← 196 התמונות
-src/lib/            ← store.js (Supabase או localStorage), scoring.js (המרה לניקוד Hub), dates.js (שעון ישראל)
+src/lib/            ← store.js (Supabase או localStorage), scoring.js (המרה לניקוד Hub)
 supabase/schema.sql ← טבלאות profiles / score_events / game_progress + view leaderboard
 scripts/check-data.mjs ← בדיקת כל המאגרים (`npm run check-data`)
 ```
@@ -84,12 +84,14 @@ scripts/check-data.mjs ← בדיקת כל המאגרים (`npm run check-data`)
 - **PUZZLIT:** מאגר 196 החידות (`PUZZLIT_Visual_Puzzles.md`) הוא הגרסה המעודכנת. `PuzzlitApp.jsx` ופרומט הבנייה הם אב-טיפוס ישן. בהמשך עומר ירצה להוסיף ולהסיר חידות ממסך הניהול.
 - **Stack:** React + Vite + Tailwind + Supabase (עומר לא מכיר Supabase — להסביר לו כל צעד ידני בפשטות).
 - **שרשרת:** לאחד את שני הסטים (בוצע: `src/games/chain/chains.js`, התיקונים מתועדים בראש הקובץ).
-- **ניקוד הוליסטי:** להציע 2–3 חלופות. חלופה א' ממומשת זמנית ב-`src/lib/scoring.js` עד שעומר יבחר.
+- **ניקוד הוליסטי:** חלופה א' ("איזון לפי זמן משחק"), ב-`src/lib/scoring.js`.
+- **אין כרגע חידות יומיות:** כל החידות והשרשראות פתוחות. מה יוגבל יומית יוחלט בהמשך.
+- **מנהל:** רק `omerzaguril@gmail.com`. אין צורך במייל שני.
 
 ## החלטות ברירת מחדל שלקחתי (לאשר עם עומר)
 - PUZZLIT: שני הרמזים זמינים בכל השלבים (−20% כל אחד). כל השלבים פתוחים (בלי נעילה). XP לפי שלב: 100/200/400/700/1200/1800. נקודות רק בפתרון ראשון של חידה.
 - PUZZLIT: מחסן אותיות = האותיות המדויקות של `primary`, מעורבבות, בלי אותיות מסיחות. אפשר גם להקליד מהמקלדת ולומר בקול (Web Speech API, `he-IL`).
-- שרשרת: עד שיהיה לוח שיבוץ בניהול, השרשרת של היום נבחרת דטרמיניסטית לפי התאריך (אותה לכולם). יציאה באמצע עוצרת את השעון וההתקדמות נשמרת.
+- שרשרת: מסך בחירה של כל 31 השרשראות. נקודות רק בהשלמה ראשונה. יציאה באמצע עוצרת את השעון וההתקדמות נשמרת.
 
 ## עקרונות עבודה
 - כשעובדים על משחק ספציפי, נוגעים רק בקבצים שלו. כשעובדים על ה-Hub, קוראים את שלושת המשחקים.

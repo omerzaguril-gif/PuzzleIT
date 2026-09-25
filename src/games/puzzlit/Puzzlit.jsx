@@ -1,12 +1,11 @@
 // PUZZLIT — חידות ויזואליות, על בסיס מאגר 196 החידות (PUZZLIT_Visual_Puzzles.md).
 // עיצוב: "הקלף הוא הכוכב" — לבן נקי, כחול #2E5BFF, Assistant, וגרדיאנט לכל שלב.
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Calendar, Check, ChevronLeft, Lightbulb, Mic, RotateCcw, Shuffle, Delete } from 'lucide-react';
+import { Check, ChevronLeft, Lightbulb, Mic, RotateCcw, Shuffle, Delete } from 'lucide-react';
 import {
-  PUZZLES, STAGES, stageOf, stageGradient, puzzlesInStage, dailyPuzzle,
+  PUZZLES, STAGES, stageOf, stageGradient, puzzlesInStage,
   imageUrl, checkAnswer, normalize, xpFor,
 } from './logic.js';
-import { israelDate } from '../../lib/dates.js';
 import { store } from '../../lib/store.js';
 import { puzzlitToHub } from '../../lib/scoring.js';
 
@@ -16,8 +15,6 @@ const EMPTY = { solved: {}, xp: 0 };
 export default function Puzzlit({ paused, onScore, setInProgress }) {
   const [progress, setProgress] = useState(null);
   const [view, setView] = useState({ name: 'home' });
-  const today = useRef(israelDate()).current;
-  const daily = dailyPuzzle(today);
 
   useEffect(() => {
     store.loadProgress('puzzlit').then(p => setProgress(p || EMPTY)).catch(() => setProgress(EMPTY));
@@ -50,8 +47,7 @@ export default function Puzzlit({ paused, onScore, setInProgress }) {
     <div dir="rtl" className="min-h-[calc(100vh-48px)] bg-white text-[#0A0A0A] px-4 py-5" style={{ fontFamily: "'Assistant', sans-serif" }}>
       <div className="max-w-[520px] mx-auto">
         {view.name === 'home' && (
-          <Home progress={progress} daily={daily}
-            onDaily={() => openPuzzle(daily, 'home')}
+          <Home progress={progress}
             onStage={n => setView({ name: 'stage', stage: n })} />
         )}
         {view.name === 'stage' && (
@@ -61,9 +57,8 @@ export default function Puzzlit({ paused, onScore, setInProgress }) {
         )}
         {view.name === 'puzzle' && (
           <PuzzleView key={view.puzzle.id} puzzle={view.puzzle} paused={paused}
-            isDaily={view.puzzle.id === daily.id}
             alreadySolved={!!progress.solved[view.puzzle.id]}
-            onBack={() => setView(view.from === 'stage' ? { name: 'stage', stage: stageOf(view.puzzle) } : { name: 'home' })}
+            onBack={() => setView({ name: 'stage', stage: stageOf(view.puzzle) })}
             onSolve={solve} />
         )}
         {view.name === 'solution' && (
@@ -72,10 +67,10 @@ export default function Puzzlit({ paused, onScore, setInProgress }) {
               const list = puzzlesInStage(stageOf(view.puzzle));
               const next = list.find(p => p.num > view.puzzle.num && !progress.solved[p.id])
                 || list.find(p => !progress.solved[p.id]);
-              if (next && view.from === 'stage') openPuzzle(next, 'stage');
-              else setView(view.from === 'stage' ? { name: 'stage', stage: stageOf(view.puzzle) } : { name: 'home' });
+              if (next) openPuzzle(next, 'stage');
+              else setView({ name: 'stage', stage: stageOf(view.puzzle) });
             }}
-            nextLabel={view.from === 'stage' ? 'לחידה הבאה' : 'חזרה'} />
+            nextLabel="לחידה הבאה" />
         )}
       </div>
     </div>
@@ -83,9 +78,8 @@ export default function Puzzlit({ paused, onScore, setInProgress }) {
 }
 
 // ------------------------------------------------------------------ home
-function Home({ progress, daily, onDaily, onStage }) {
+function Home({ progress, onStage }) {
   const solvedCount = Object.keys(progress.solved).length;
-  const dailySolved = !!progress.solved[daily.id];
   return (
     <>
       <div className="flex items-end justify-between mb-5">
@@ -99,18 +93,6 @@ function Home({ progress, daily, onDaily, onStage }) {
         </div>
       </div>
 
-      <button onClick={onDaily}
-        className="w-full flex items-center gap-4 p-3 rounded-3xl border-[1.5px] border-[#ECECEC] shadow-[0_4px_24px_rgba(0,0,0,0.06)] mb-6 text-right">
-        <img src={imageUrl(daily)} alt="" className="w-20 h-20 rounded-2xl object-cover shrink-0" />
-        <div className="flex-1">
-          <div className="flex items-center gap-1.5 text-sm font-bold" style={{ color: BLUE }}>
-            <Calendar className="w-4 h-4" /> חידת היום
-          </div>
-          <div className="text-lg font-bold">חידה #{daily.num}</div>
-          <div className="text-sm text-[#6B6B6B]">{dailySolved ? 'פתרתם אותה ✓' : 'אותה חידה לכולם, היום בלבד'}</div>
-        </div>
-        <ChevronLeft className="w-5 h-5 text-[#6B6B6B]" />
-      </button>
 
       <div className="text-sm font-bold text-[#6B6B6B] mb-2.5">שלבים</div>
       <div className="grid grid-cols-2 gap-3">
@@ -177,7 +159,7 @@ function shuffled(arr) {
   return a;
 }
 
-function PuzzleView({ puzzle, paused, isDaily, alreadySolved, onBack, onSolve }) {
+function PuzzleView({ puzzle, paused, alreadySolved, onBack, onSolve }) {
   const stage = STAGES[stageOf(puzzle) - 1];
   const primary = puzzle.answer.primary;
   const wordLens = useMemo(() => primary.split(/\s+/).filter(Boolean).map(w => w.length), [primary]);
@@ -286,7 +268,7 @@ function PuzzleView({ puzzle, paused, isDaily, alreadySolved, onBack, onSolve })
       <div className="flex items-center justify-between mb-3">
         <button onClick={onBack} className="text-sm font-bold text-[#6B6B6B]">→ חזרה</button>
         <div className="text-sm font-bold px-3 py-1 rounded-full text-white" style={{ background: stageGradient(stage) }}>
-          {isDaily ? 'חידת היום · ' : ''}שלב {stage.n} · #{puzzle.num}
+          שלב {stage.n} · #{puzzle.num}
         </div>
       </div>
 
