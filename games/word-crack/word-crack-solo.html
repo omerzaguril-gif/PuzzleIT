@@ -1,0 +1,1755 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>פיצוח מילים</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@500;700;900&family=Rubik:wght@400;500;700;900&display=swap');
+
+  :root{
+    --cream:#FAF5EC;
+    --ink:#2B2A28;
+    --muted:#8A8478;
+    --accent:#C1852F;
+    --accent-dark:#8f6220;
+    --good:#6E8B5C;
+    --good-bg:#EDF1E5;
+    --bad:#B14A4A;
+    --card-bg:#fff;
+    --line:#E7E0D2;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    min-height:100vh;
+    background:var(--cream);
+    color:var(--ink);
+    font-family:'Rubik', sans-serif;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+  }
+
+  .wrap{
+    width:100%;
+    max-width:440px;
+  }
+
+  h1{
+    font-family:'Frank Ruhl Libre', serif;
+    font-weight:900;
+    font-size:30px;
+    text-align:center;
+    margin:0 0 4px 0;
+  }
+  .tagline{
+    text-align:center;
+    color:var(--muted);
+    font-size:14px;
+    margin-bottom:22px;
+  }
+
+  .hud{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:16px;
+  }
+  .hud .stat{
+    background:var(--card-bg);
+    border:1.5px solid var(--line);
+    border-radius:12px;
+    padding:10px 16px;
+    text-align:center;
+    min-width:100px;
+  }
+  .hud .stat .num{
+    font-family:'Frank Ruhl Libre', serif;
+    font-weight:900;
+    font-size:26px;
+    line-height:1;
+  }
+  .hud .stat .label{
+    font-size:11px;
+    color:var(--muted);
+    margin-top:3px;
+  }
+  #timer.low .num{ color:var(--bad); }
+
+  .card{
+    background:var(--card-bg);
+    border:1.5px solid var(--line);
+    border-radius:18px;
+    padding:28px 22px;
+    text-align:center;
+    box-shadow:0 10px 30px rgba(43,42,40,0.06);
+  }
+
+  .clue-label{
+    display:flex;
+    justify-content:space-between;
+    font-size:12px;
+    color:var(--muted);
+    letter-spacing:.3px;
+    margin-bottom:10px;
+  }
+  .clue-count{
+    background:var(--good-bg);
+    color:var(--good);
+    border-radius:20px;
+    padding:2px 10px;
+    font-weight:700;
+  }
+  .clues{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    margin-bottom:16px;
+    min-height:44px;
+  }
+  .clue-word{
+    font-family:'Frank Ruhl Libre', serif;
+    font-weight:700;
+    font-size:30px;
+    color:var(--accent-dark);
+    animation:pop .25s ease;
+  }
+  .clue-word.secondary{
+    font-size:19px;
+    color:var(--muted);
+    font-weight:500;
+  }
+  .solved-reveal{
+    font-family:'Frank Ruhl Libre', serif;
+    font-weight:900;
+    font-size:32px;
+    color:var(--good);
+    animation:pop .2s ease;
+  }
+  @keyframes pop{
+    from{ transform:scale(.85); opacity:0; }
+    to{ transform:scale(1); opacity:1; }
+  }
+
+  input#guess{
+    width:100%;
+    padding:14px 16px;
+    font-size:18px;
+    font-family:'Rubik', sans-serif;
+    border:2px solid var(--line);
+    border-radius:12px;
+    text-align:center;
+    background:var(--cream);
+    color:var(--ink);
+    outline:none;
+    margin-bottom:14px;
+  }
+  input#guess:focus{ border-color:var(--accent); }
+  input#guess.wrong{
+    border-color:var(--bad);
+    animation:shake .3s ease;
+  }
+  @keyframes shake{
+    0%,100%{ transform:translateX(0); }
+    25%{ transform:translateX(-6px); }
+    75%{ transform:translateX(6px); }
+  }
+
+  button{
+    font-family:'Rubik', sans-serif;
+    font-weight:700;
+    font-size:15px;
+    border:none;
+    border-radius:12px;
+    padding:13px 10px;
+    cursor:pointer;
+    width:100%;
+  }
+  #guessBtn{
+    background:var(--ink);
+    color:var(--cream);
+  }
+  #guessBtn:hover{ background:#000; }
+
+  .action-row{
+    display:flex;
+    gap:10px;
+  }
+  .action-row button{ margin-bottom:0; width:auto; }
+  .action-row #guessBtn{ flex:1; }
+  .skip-btn{
+    background:none;
+    color:var(--muted);
+    border:1.5px solid var(--line);
+    flex:0 0 auto;
+    width:auto;
+    padding:13px 18px;
+  }
+  .skip-btn:hover{ color:var(--ink); border-color:var(--ink); }
+
+  .feedback{
+    min-height:20px;
+    font-size:13px;
+    margin-top:10px;
+    color:var(--muted);
+  }
+  .feedback.correct{ color:var(--good); font-weight:700; }
+
+  .wrong-guesses{
+    margin-top:16px;
+    padding-top:14px;
+    border-top:1px dashed var(--line);
+    text-align:center;
+  }
+  .wrong-guesses .wg-label{
+    font-size:11px;
+    color:var(--muted);
+    margin-bottom:6px;
+  }
+  .wg-list{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+    justify-content:center;
+  }
+  .wg-chip{
+    font-size:12px;
+    color:var(--muted);
+    text-decoration:line-through;
+    background:var(--cream);
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:3px 9px;
+  }
+
+  /* Start / End overlays */
+  .overlay{
+    background:var(--card-bg);
+    border:1.5px solid var(--line);
+    border-radius:18px;
+    padding:36px 24px;
+    text-align:center;
+    box-shadow:0 10px 30px rgba(43,42,40,0.06);
+  }
+  .overlay h2{
+    font-family:'Frank Ruhl Libre', serif;
+    font-size:24px;
+    margin:0 0 10px 0;
+  }
+  .overlay p{
+    color:var(--muted);
+    font-size:14px;
+    line-height:1.7;
+    margin-bottom:22px;
+  }
+  .rules-list{
+    text-align:right;
+    margin:0 0 26px 0;
+    padding-inline-start:22px;
+    color:var(--ink);
+    font-size:15px;
+    line-height:1.9;
+  }
+  .rules-list li{ margin-bottom:6px; }
+  .big-btn{
+    font-size:19px;
+    padding:20px 16px;
+    border-radius:14px;
+  }
+  .overlay .score-num{
+    font-family:'Frank Ruhl Libre', serif;
+    font-weight:900;
+    font-size:56px;
+    color:var(--accent-dark);
+    line-height:1;
+    margin-bottom:4px;
+  }
+  .overlay button{
+    background:var(--ink);
+    color:var(--cream);
+  }
+  .overlay button:hover{ background:#000; }
+
+  .report{
+    margin-top:22px;
+    text-align:right;
+    max-height:320px;
+    overflow-y:auto;
+    border-top:1px dashed var(--line);
+    padding-top:16px;
+  }
+  .report-item{
+    margin-bottom:14px;
+    padding-bottom:12px;
+    border-bottom:1px solid var(--line);
+  }
+  .report-item:last-child{
+    border-bottom:none;
+    margin-bottom:0;
+  }
+  .report-head{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-family:'Frank Ruhl Libre', serif;
+    font-weight:700;
+    font-size:18px;
+  }
+  .report-icon{
+    font-size:16px;
+    flex:none;
+    width:20px;
+    text-align:center;
+  }
+  .report-icon.solved{ color:var(--good); }
+  .report-icon.unsolved{ color:var(--bad); }
+  .report-pts{
+    margin-inline-start:auto;
+    font-size:12px;
+    font-weight:700;
+    color:var(--accent-dark);
+    font-family:'Rubik', sans-serif;
+  }
+  .report-detail{
+    font-size:12.5px;
+    color:var(--muted);
+    margin-top:5px;
+    padding-inline-start:28px;
+    line-height:1.6;
+  }
+  .report-detail b{ color:var(--ink); }
+  .report-empty{
+    text-align:center;
+    color:var(--muted);
+    font-size:13px;
+  }
+
+  .hidden{ display:none !important; }
+
+  /* ---------- Admin gate ---------- */
+  .admin-gate-text{
+    color:var(--muted);
+    font-size:14px;
+    line-height:1.6;
+    margin-bottom:18px;
+  }
+  #adminEmailInput{
+    width:100%;
+    padding:14px 16px;
+    font-size:15px;
+    font-family:'Rubik', sans-serif;
+    border:2px solid var(--line);
+    border-radius:12px;
+    text-align:center;
+    background:var(--cream);
+    color:var(--ink);
+    outline:none;
+    margin-bottom:8px;
+    direction:ltr;
+  }
+  #adminEmailInput:focus{ border-color:var(--accent); }
+
+  /* ---------- Admin editor (full screen) ---------- */
+  .admin-editor{
+    position:fixed;
+    inset:0;
+    background:var(--cream);
+    z-index:40;
+    display:flex;
+    flex-direction:column;
+    padding:16px;
+  }
+  .admin-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+    margin-bottom:12px;
+    flex-wrap:wrap;
+  }
+  .admin-back-btn, .admin-export-btn{
+    width:auto;
+    background:var(--card-bg);
+    border:1.5px solid var(--line);
+    color:var(--ink);
+    font-size:13px;
+    padding:9px 14px;
+    border-radius:10px;
+  }
+  .admin-export-btn{ color:var(--accent-dark); border-color:var(--accent); }
+  .admin-header-title{
+    font-family:'Frank Ruhl Libre', serif;
+    font-weight:700;
+    font-size:16px;
+  }
+  .admin-header-title span{
+    font-size:12px;
+    color:var(--muted);
+    font-weight:400;
+    font-family:'Rubik', sans-serif;
+  }
+  .admin-search{
+    width:100%;
+    padding:12px 14px;
+    font-size:15px;
+    font-family:'Rubik', sans-serif;
+    border:2px solid var(--line);
+    border-radius:12px;
+    text-align:right;
+    background:var(--card-bg);
+    color:var(--ink);
+    outline:none;
+    margin-bottom:12px;
+  }
+  .admin-search:focus{ border-color:var(--accent); }
+  .admin-list{
+    flex:1;
+    overflow-y:auto;
+    max-width:480px;
+    width:100%;
+    margin:0 auto;
+  }
+  .admin-word-row{
+    background:var(--card-bg);
+    border:1.5px solid var(--line);
+    border-radius:12px;
+    padding:12px 14px;
+    margin-bottom:8px;
+    cursor:pointer;
+  }
+  .admin-word-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+  }
+  .admin-word-name{
+    font-family:'Frank Ruhl Libre', serif;
+    font-weight:700;
+    font-size:16px;
+  }
+  .admin-word-name.overridden::after{
+    content:" ✏️";
+    font-size:12px;
+  }
+  .admin-word-preview{
+    font-size:12px;
+    color:var(--muted);
+    margin-top:4px;
+  }
+  .admin-word-editor{
+    margin-top:12px;
+    padding-top:12px;
+    border-top:1px dashed var(--line);
+  }
+  .admin-clue-row{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    margin-bottom:8px;
+  }
+  .admin-clue-num{
+    font-size:11px;
+    color:var(--muted);
+    width:16px;
+    flex:none;
+  }
+  .admin-clue-input{
+    flex:1;
+    padding:9px 10px;
+    font-size:14px;
+    font-family:'Rubik', sans-serif;
+    border:1.5px solid var(--line);
+    border-radius:8px;
+    text-align:right;
+    background:var(--cream);
+    color:var(--ink);
+    outline:none;
+  }
+  .admin-clue-input:focus{ border-color:var(--accent); }
+  .admin-reorder-btns{
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+  }
+  .admin-reorder-btns button{
+    width:24px;
+    padding:2px 0;
+    font-size:11px;
+    border-radius:5px;
+    background:var(--line);
+    color:var(--ink);
+  }
+  .admin-reorder-btns button:disabled{
+    opacity:0.3;
+    cursor:default;
+  }
+  .admin-word-actions{
+    display:flex;
+    gap:8px;
+    margin-top:6px;
+  }
+  .admin-reset-btn{
+    width:auto;
+    background:none;
+    color:var(--bad);
+    border:1.5px solid var(--line);
+    font-size:12px;
+    padding:8px 12px;
+  }
+  .admin-saved-tag{
+    font-size:11px;
+    color:var(--good);
+    align-self:center;
+  }
+
+  /* ---------- Export modal ---------- */
+  .export-modal-card{ max-width:480px; }
+  .export-textarea{
+    width:100%;
+    height:160px;
+    font-family:monospace;
+    font-size:11px;
+    direction:ltr;
+    text-align:left;
+    padding:10px;
+    border:1.5px solid var(--line);
+    border-radius:10px;
+    background:var(--cream);
+    color:var(--ink);
+    margin-bottom:14px;
+    resize:vertical;
+  }
+
+  /* ---------- Main menu tile ---------- */
+  .tile{
+    background:var(--card-bg);
+    border:1.5px solid var(--line);
+    border-radius:18px;
+    padding:40px 24px;
+    text-align:center;
+    cursor:pointer;
+    box-shadow:0 10px 30px rgba(43,42,40,0.06);
+    transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .tile:hover{
+    transform:translateY(-2px);
+    box-shadow:0 14px 34px rgba(43,42,40,0.1);
+  }
+  .tile-icon{ font-size:44px; margin-bottom:10px; }
+  .tile-title{
+    font-family:'Frank Ruhl Libre', serif;
+    font-weight:700;
+    font-size:22px;
+    margin-bottom:4px;
+  }
+  .tile-sub{ font-size:13px; color:var(--muted); }
+
+  .tile-small{
+    padding:14px 20px;
+    margin-top:12px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    text-align:right;
+    justify-content:center;
+  }
+  .tile-icon-small{ font-size:20px; }
+  .tile-title-small{
+    font-size:14px;
+    font-weight:500;
+    color:var(--muted);
+  }
+
+  /* ---------- Exit button in HUD ---------- */
+  .hud{ position:relative; }
+  .exit-btn{
+    position:absolute;
+    top:-40px;
+    left:0;
+    width:auto;
+    background:none;
+    color:var(--muted);
+    border:1px solid var(--line);
+    border-radius:10px;
+    font-size:12px;
+    font-weight:500;
+    padding:6px 12px;
+  }
+  .exit-btn:hover{ color:var(--bad); border-color:var(--bad); }
+
+  .secondary-btn{
+    background:none;
+    color:var(--muted);
+    border:1.5px solid var(--line);
+    margin-top:10px;
+  }
+  .secondary-btn:hover{ color:var(--ink); border-color:var(--ink); }
+
+  /* ---------- Exit confirm modal ---------- */
+  .modal-backdrop{
+    position:fixed;
+    inset:0;
+    background:rgba(43,42,40,0.45);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+    z-index:50;
+  }
+  .modal-card{
+    background:var(--card-bg);
+    border-radius:16px;
+    padding:26px 22px;
+    max-width:340px;
+    width:100%;
+    text-align:center;
+    box-shadow:0 16px 40px rgba(0,0,0,0.18);
+  }
+  .modal-title{
+    font-family:'Frank Ruhl Libre', serif;
+    font-weight:700;
+    font-size:20px;
+    margin-bottom:8px;
+  }
+  .modal-text{
+    font-size:13px;
+    color:var(--muted);
+    line-height:1.6;
+    margin-bottom:20px;
+  }
+  .modal-btn-row{
+    display:flex;
+    gap:10px;
+  }
+  .modal-btn{
+    flex:1;
+    background:var(--line);
+    color:var(--ink);
+  }
+  .modal-btn.danger{
+    background:var(--bad);
+    color:#fff;
+  }
+  .modal-btn.danger:hover{ background:#8f3838; }
+  .modal-btn:not(.danger):hover{ background:#DAD2C0; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <h1>פיצוח מילים</h1>
+  <div class="tagline">כמה מילים תצליחו לפצח בשתי דקות?</div>
+
+  <!-- MAIN MENU -->
+  <div id="mainMenu">
+    <div class="tile" id="openGameTile">
+      <div class="tile-icon">🧩</div>
+      <div class="tile-title">פיצוח מילים</div>
+      <div class="tile-sub">לחצו כדי לפתוח את המשחק</div>
+    </div>
+    <div class="tile tile-small" id="openAdminTile">
+      <div class="tile-icon-small">🛠️</div>
+      <div class="tile-title-small">ניהול רמזים</div>
+    </div>
+  </div>
+
+  <!-- START SCREEN -->
+  <div class="hidden overlay" id="startScreen">
+    <h2>איך משחקים</h2>
+    <ul class="rules-list">
+      <li>בכל סיבוב תקבלו רמז — מילה אחת הקשורה למילה הסודית</li>
+      <li>ניחוש שגוי? מיד תקבלו רמז נוסף (עד 5 רמזים למילה)</li>
+      <li>פחות רמזים = יותר נקודות: 5 על רמז ראשון, ועד נקודה אחת על החמישי</li>
+      <li>יש לכם 2 דקות - כמה נקודות תאספו?</li>
+    </ul>
+    <button id="startBtn" class="big-btn">הבנתי, בואו נשחק!</button>
+  </div>
+
+  <!-- GAME SCREEN -->
+  <div class="hidden" id="gameScreen">
+    <div class="hud">
+      <button id="exitBtn" class="exit-btn" title="יציאה לתפריט הראשי">✕ יציאה</button>
+      <div class="stat" id="timer">
+        <div class="num" id="timerNum">2:00</div>
+        <div class="label">זמן נותר</div>
+      </div>
+      <div class="stat">
+        <div class="num" id="scoreNum">0</div>
+        <div class="label">נקודות</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="clue-label">
+        <span>הרמזים שלך</span>
+        <span class="clue-count" id="clueCount">רמז 1 מתוך 5</span>
+      </div>
+      <div class="clues" id="clues"></div>
+
+      <input type="text" id="guess" placeholder="הקלידו ניחוש..." autocomplete="off">
+      <div class="action-row">
+        <button id="guessBtn">נחש!</button>
+        <button id="skipBtn" class="skip-btn">דלג ⏭</button>
+      </div>
+      <div class="feedback" id="feedback">&nbsp;</div>
+
+      <div class="wrong-guesses">
+        <div class="wg-label">ניחושים קודמים למילה הזו:</div>
+        <div class="wg-list" id="wgList"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- END SCREEN -->
+  <div class="hidden overlay" id="endScreen">
+    <h2>🎉 הזמן נגמר!</h2>
+    <div class="score-num" id="finalScore">0</div>
+    <p>נקודות שאספת</p>
+    <button id="restartBtn">שחקו שוב</button>
+    <button id="endToMenuBtn" class="secondary-btn">לתפריט הראשי</button>
+    <div class="report" id="report"></div>
+  </div>
+
+  <!-- ADMIN GATE -->
+  <div class="hidden overlay" id="adminGateScreen">
+    <h2>ניהול רמזים</h2>
+    <p class="admin-gate-text">הזינו את כתובת המייל המורשית כדי לערוך את מאגר הרמזים.</p>
+    <input type="email" id="adminEmailInput" placeholder="כתובת מייל" autocomplete="off">
+    <div class="feedback" id="adminGateFeedback">&nbsp;</div>
+    <button id="adminEnterBtn" class="big-btn">כניסה</button>
+    <button id="adminGateBackBtn" class="secondary-btn">חזרה לתפריט</button>
+  </div>
+</div>
+
+<!-- EXIT CONFIRM MODAL -->
+<div class="hidden modal-backdrop" id="exitModal">
+  <div class="modal-card">
+    <div class="modal-title">לצאת מהמשחק?</div>
+    <p class="modal-text">ההתקדמות בסיבוב הנוכחי תאבד אם תצאו עכשיו.</p>
+    <div class="modal-btn-row">
+      <button id="exitYesBtn" class="modal-btn danger">כן, צא</button>
+      <button id="exitNoBtn" class="modal-btn">לא, המשך לשחק</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN EDITOR (full screen) -->
+<div class="hidden admin-editor" id="adminEditorScreen">
+  <div class="admin-header">
+    <button id="adminBackBtn" class="admin-back-btn">→ חזרה</button>
+    <div class="admin-header-title">ניהול רמזים <span id="adminWordCount"></span></div>
+    <button id="adminExportBtn" class="admin-export-btn">ייצוא מאגר מעודכן</button>
+  </div>
+  <input type="text" id="adminSearch" class="admin-search" placeholder="חיפוש מילה...">
+  <div class="admin-list" id="adminList"></div>
+</div>
+
+<!-- ADMIN EXPORT MODAL -->
+<div class="hidden modal-backdrop" id="exportModal">
+  <div class="modal-card export-modal-card">
+    <div class="modal-title">ייצוא מאגר מעודכן</div>
+    <p class="modal-text">זהו כל מאגר המילים, כולל כל העריכות שביצעת. העתיקו והדביקו את זה בחזרה לקלוד אם תרצו שאשלב את זה לצמיתות בקובץ.</p>
+    <textarea id="exportTextarea" class="export-textarea" readonly></textarea>
+    <div class="modal-btn-row">
+      <button id="exportCopyBtn" class="modal-btn">העתק</button>
+      <button id="exportCloseBtn" class="modal-btn">סגור</button>
+    </div>
+  </div>
+</div>
+
+
+<script>
+const WORDS_DEFAULT = [
+  { word: "שמש", clues: ["קרניים","זריחה","חום","אנרגיה","יום"], accepts: [] },
+  { word: "ים", clues: ["גלים","מלח","חוף","דגים","עומק"], accepts: ["ימים"] },
+  { word: "ספר", clues: ["דפים","כריכה","מדף","קריאה","ידע"], accepts: ["ספרים","ספרייה","סופר"] },
+  { word: "מחשב", clues: ["מקלדת","מסך","תוכנה","אינטרנט","טכנולוגיה"], accepts: ["מחשבים","חישוב","לחשב"] },
+  { word: "כלב", clues: ["נביחה","זנב","גור","נאמנות","מחמד"], accepts: ["כלבה","כלבים","כלבות"] },
+  { word: "קפה", clues: ["קפאין","מריר","כוס","בוקר","ער"], accepts: [] },
+  { word: "גשם", clues: ["טיפות","מטריה","רטוב","ענן","אקלים"], accepts: ["גשמים"] },
+  { word: "עץ", clues: ["גזע","עלים","שורשים","יער","טבע"], accepts: ["עצים"] },
+  { word: "טלפון", clues: ["אפליקציות","מסך","שיחה","כיס","תקשורת"], accepts: ["טלפונים","לטלפן"] },
+  { word: "לב", clues: ["דופק","שאיבה","איבר","אהבה","רגש"], accepts: ["לבבות","לבבי"] },
+  { word: "שעון", clues: ["מחוגים","יד","תזכורת","דייקנות","זמן"], accepts: ["שעונים","שעה","שעות"] },
+  { word: "מפתח", clues: ["מנעול","ברזל","דלת","כיס","גישה"], accepts: ["מפתחות","לפתוח","פתיחה"] },
+  { word: "כוכב", clues: ["זוהר","לילה","מרחק","קבוצה","שמיים"], accepts: ["כוכבים","כוכבית"] },
+  { word: "אש", clues: ["להבה","מדורה","בישול","סכנה","חום"], accepts: [] },
+  { word: "שלג", clues: ["פתיתים","קרח","לבן","חורף","קור"], accepts: ["שלגים","מושלג"] },
+  { word: "נר", clues: ["פתיל","שעווה","להבה","חג","אור"], accepts: ["נרות"] },
+  { word: "דבש", clues: ["כוורת","דבורה","צנצנת","דביק","מתוק"], accepts: [] },
+  { word: "חלום", clues: ["סיוט","תת-מודע","שינה","דמיון","לילה"], accepts: ["חלומות","לחלום","חולם"] },
+  { word: "מוזיקה", clues: ["תווים","קצב","שיר","אוזניים","אמנות"], accepts: ["מוזיקלי"] },
+  { word: "גיטרה", clues: ["מיתרים","נגינה","להקה","פריטה","עץ"], accepts: ["גיטרות","גיטריסט"] },
+  { word: "מטוס", clues: ["כנפיים","נחיתה","טרמינל","שמיים","תחבורה"], accepts: ["מטוסים","טס","לטוס"] },
+  { word: "רכבת", clues: ["מסילה","קרונות","רציף","תחנה","תחבורה"], accepts: ["רכבות"] },
+  { word: "תפוח", clues: ["נשיכה","אדום","עץ","עדן","פרי"], accepts: ["תפוחים"] },
+  { word: "בננה", clues: ["קליפה","צהוב","קוף","אנרגיה","פרי"], accepts: ["בננות"] },
+  { word: "פיצה", clues: ["פרוסה","עגולה","גבינה","איטליה","מאפה"], accepts: ["פיצות"] },
+  { word: "שוקולד", clues: ["קקאו","חטיף","חום","מתוק","ממתק"], accepts: ["שוקולדים"] },
+  { word: "מלך", clues: ["שרביט","כתר","ארמון","נתינים","שלטון"], accepts: ["מלכה","מלכים","מלכות"] },
+  { word: "נסיכה", clues: ["שמלה","כתר","ארמון","סיפור","מלכות"], accepts: ["נסיך","נסיכים","נסיכות"] },
+  { word: "הר", clues: ["פסגה","סלעים","טיפוס","נוף","גובה"], accepts: ["הרים","הררי"] },
+  { word: "נהר", clues: ["גדה","זרימה","דגים","מקור","מים"], accepts: ["נהרות"] },
+  { word: "אריה", clues: ["שאגה","רעמה","סוואנה","טורף","חיה"], accepts: ["אריות"] },
+  { word: "פיל", clues: ["חדק","אוזניים","אפריקה","ענק","חיה"], accepts: ["פילים"] },
+  { word: "ציפור", clues: ["נוצות","קן","עפה","כנפיים","עוף"], accepts: ["ציפורים"] },
+  { word: "דג", clues: ["סנפיר","קשקשים","חכה","שחייה","ים"], accepts: ["דגים","דיג","לדוג"] },
+  { word: "פרפר", clues: ["גולם","צבעוני","כנפיים","גן","חרק"], accepts: ["פרפרים"] },
+  { word: "רופא", clues: ["מרשם","אבחון","חיסון","אשפוז","חולים"], accepts: ["רופאה","רופאים","רופאות","רפואה"] },
+  { word: "מורה", clues: ["לוח","תלמידים","שיעור","כיתה","חינוך"], accepts: ["מורים","מורות","הוראה"] },
+  { word: "שוטר", clues: ["ניידת","מדים","תעודה","סדר","חוק"], accepts: ["שוטרת","שוטרים","שוטרות","משטרה"] },
+  { word: "טבח", clues: ["סינר","תבלינים","סכין","מסעדה","בישול"], accepts: ["טבחית","טבחים","טבחיות"] },
+  { word: "כדורגל", clues: ["שער","אוהדים","מגרש","קבוצה","ספורט"], accepts: ["כדורגלן","כדורגלנית"] },
+  { word: "שחייה", clues: ["סנפירים","בריכה","סטייל","מים","ספורט"], accepts: ["שחיין","שחיינית","לשחות"] },
+  { word: "ריצה", clues: ["מרתון","נעליים","רגליים","מהירות","ספורט"], accepts: ["רץ","רצה","לרוץ"] },
+  { word: "נמר", clues: ["פסים","טורף","כתום","ג'ונגל","חיה"], accepts: [] },
+  { word: "זברה", clues: ["פסים","סוואנה","אפריקה","פרסה","חיה"], accepts: [] },
+  { word: "ג'ירפה", clues: ["ענקית","כתמים","אפריקה","גובה","חיה"], accepts: [] },
+  { word: "קוף", clues: ["בננה","זנב","עצים","חיקוי","חיה"], accepts: [] },
+  { word: "דוב", clues: ["פרווה","דבש","מערה","חורף","חיה"], accepts: ["דובה"] },
+  { word: "זאב", clues: ["יללה","עדר","פרווה","יער","חיה"], accepts: ["זאבה"] },
+  { word: "שועל", clues: ["אדמדמה","ערמומי","שעיר","יער","חיה"], accepts: [] },
+  { word: "ארנב", clues: ["ארוכות","גזר","קפיצות","פרווה","חיה"], accepts: ["ארנבת"] },
+  { word: "צב", clues: ["שריון","איטי","חוף","חול","חיה"], accepts: [] },
+  { word: "נחש", clues: ["ארס","זחילה","קור","מדבר","חיה"], accepts: [] },
+  { word: "תרנגול", clues: ["כרבולת","ביצים","חצר","בוקר","חיה"], accepts: ["תרנגולת"] },
+  { word: "פרה", clues: ["חלב","עדר","שדה","קרניים","חיה"], accepts: [] },
+  { word: "סוס", clues: ["רכיבה","פרסה","רעמה","דהירה","חיה"], accepts: [] },
+  { word: "חמור", clues: ["עיקשות","סבל","ארוכות","כפר","חיה"], accepts: ["חמורה"] },
+  { word: "כבשה", clues: ["צמר","עדר","רועה","גיזה","חיה"], accepts: [] },
+  { word: "עז", clues: ["מרעה","זקן","טיפוס","הרים","חיה"], accepts: [] },
+  { word: "חזיר", clues: ["בוץ","חוטם","משק","נקניק","חיה"], accepts: ["חזירה"] },
+  { word: "עכבר", clues: ["מלכודת","גבינה","מחשב","מכרסם","חיה"], accepts: [] },
+  { word: "חתול", clues: ["מיאו","גירוד","שובב","פרווה","חיה"], accepts: ["חתולה"] },
+  { word: "תנין", clues: ["לסת","ביצות","מחוספס","נילוס","חיה"], accepts: [] },
+  { word: "קרנף", clues: ["עבה","מסיבי","אפריקה","ענק","חיה"], accepts: [] },
+  { word: "היפופוטם", clues: ["כבד","נהר","עבה","אפריקה","חיה"], accepts: [] },
+  { word: "ינשוף", clues: ["לילה","נוצות","ערני","חוכמה","עוף"], accepts: [] },
+  { word: "נשר", clues: ["עוצמתי","טורף","שמיים","סמל","עוף"], accepts: [] },
+  { word: "עורב", clues: ["שחור","חוכמה","קרקור","ענף","עוף"], accepts: [] },
+  { word: "יונה", clues: ["שלום","קן","עיר","נוצות","עוף"], accepts: [] },
+  { word: "תוכי", clues: ["חיקוי","צבעוני","ג'ונגל","מקור","עוף"], accepts: [] },
+  { word: "דולפין", clues: ["לוליינות","חוכמה","ים","סונאר","חיה"], accepts: [] },
+  { word: "לוויתן", clues: ["נשיפה","ענק","עומק","זנב","חיה"], accepts: [] },
+  { word: "כריש", clues: ["חדות","סנפיר","ים","טורף","חיה"], accepts: [] },
+  { word: "תמנון", clues: ["זרועות","דיו","ים","חכם","חיה"], accepts: [] },
+  { word: "צפרדע", clues: ["קרקור","לשון","קפיצות","אגם","חיה"], accepts: [] },
+  { word: "חילזון", clues: ["קונכייה","איטי","ריר","גן","חיה"], accepts: [] },
+  { word: "נמלה", clues: ["שיירה","חריצות","קן","צוות","חרק"], accepts: [] },
+  { word: "עכביש", clues: ["קורים","אורגת","ציד","פינה","חרק"], accepts: [] },
+  { word: "זבוב", clues: ["זמזום","קיץ","מטרד","כנפיים","חרק"], accepts: [] },
+  { word: "דבורה", clues: ["כוורת","דבש","עוקץ","צהוב-שחור","חרק"], accepts: [] },
+  { word: "מלפפון", clues: ["סלט","ירוק","קר","מים","ירק"], accepts: [] },
+  { word: "עגבניה", clues: ["אדומה","סלט","רוטב","קטשופ","ירק"], accepts: [] },
+  { word: "גזר", clues: ["כתום","ארנב","ויטמין","סלט","ירק"], accepts: [] },
+  { word: "בצל", clues: ["דמעות","קילוף","חריף","מטבח","ירק"], accepts: [] },
+  { word: "שום", clues: ["חריף","תבלין","ואמפירים","מטבח","ירק"], accepts: [] },
+  { word: "אורז", clues: ["סושי","לבן","סיני","תוספת","מזון"], accepts: [] },
+  { word: "פסטה", clues: ["איטלקי","רוטב","ספגטי","מזלג","מזון"], accepts: [] },
+  { word: "לחם", clues: ["פרוסות","תנור","כריך","קמח","מזון"], accepts: [] },
+  { word: "חמאה", clues: ["טוסט","צהובה","מריחה","חלב","חלבי"], accepts: [] },
+  { word: "גבינה", clues: ["חלב","צהובה","סנדוויץ'","עכבר","חלבי"], accepts: [] },
+  { word: "ביצה", clues: ["חביתה","תרנגולת","צהוב-לבן","בוקר","מזון"], accepts: [] },
+  { word: "עוף", clues: ["כנפיים","חזה","מרק","תרנגולת","בשר"], accepts: [] },
+  { word: "בשר", clues: ["אדום","צלייה","ברביקיו","חלבון","מזון"], accepts: [] },
+  { word: "מרק", clues: ["חם","כף","קערה","ירקות","מזון"], accepts: [] },
+  { word: "סלט", clues: ["ירקות","קר","קערה","חסה","מזון"], accepts: [] },
+  { word: "יין", clues: ["ענבים","כוס","עתיק","חגיגה","משקה"], accepts: [] },
+  { word: "בירה", clues: ["קצף","שעורה","קר","פאב","משקה"], accepts: [] },
+  { word: "תה", clues: ["חם","עלים","כוס","מרגיע","משקה"], accepts: [] },
+  { word: "גלידה", clues: ["קר","קונוס","קיץ","טעמים","קינוח"], accepts: [] },
+  { word: "עוגה", clues: ["חגיגה","נרות","שכבות","קרם","מאפה"], accepts: [] },
+  { word: "עוגייה", clues: ["פירורים","קטנה","שוקולד","חלב","מאפה"], accepts: [] },
+  { word: "ופל", clues: ["משבצות","סירופ","בלגיה","בוקר","מאפה"], accepts: [] },
+  { word: "קרואסון", clues: ["סהר","צרפת","חמאה","בוקר","מאפה"], accepts: [] },
+  { word: "סושי", clues: ["אורז","יפן","אצות","גלילה","מזון"], accepts: [] },
+  { word: "המבורגר", clues: ["לחמנייה","קציצה","צ'יפס","מהיר","מזון"], accepts: [] },
+  { word: "נקניקיה", clues: ["לחמנייה","חרדל","צלויה","מנגל","מזון"], accepts: [] },
+  { word: "פלאפל", clues: ["חומוס","פיתה","ירוק","רחוב","מזון"], accepts: [] },
+  { word: "חומוס", clues: ["טחינה","פיתה","קדרה","ישראלי","מזון"], accepts: [] },
+  { word: "שווארמה", clues: ["פיתה","להב","סיבוב","רחוב","מזון"], accepts: [] },
+  { word: "בורקס", clues: ["בצק","מילוי","משולש","אפוי","מאפה"], accepts: [] },
+  { word: "זית", clues: ["שמן","כבוש","עץ","יווני","פרי"], accepts: [] },
+  { word: "אבטיח", clues: ["קיץ","עסיסי","גרעינים","קליפה","פרי"], accepts: [] },
+  { word: "ענב", clues: ["אשכול","יין","עגול","קטן","פרי"], accepts: [] },
+  { word: "תות", clues: ["אדום","קטן","ריבה","קיץ","פרי"], accepts: [] },
+  { word: "אגס", clues: ["מיוחדת","מתוק","עץ","עסיסי","פרי"], accepts: [] },
+  { word: "אפרסק", clues: ["שעיר","גרעין","קיץ","כתום","פרי"], accepts: [] },
+  { word: "שזיף", clues: ["סגול","גרעין","מיובש","קיץ","פרי"], accepts: [] },
+  { word: "רימון", clues: ["גרגירים","סגול-אדום","חגיגי","כתר","פרי"], accepts: [] },
+  { word: "אננס", clues: ["קוצני","טרופי","עלים","מתוק","פרי"], accepts: [] },
+  { word: "מנגו", clues: ["טרופי","כתום","רך","מתוק","פרי"], accepts: [] },
+  { word: "קיווי", clues: ["שעיר","רך","חמצמץ","קטן","פרי"], accepts: [] },
+  { word: "אגוז", clues: ["קשה","חלבון","עץ","נשנוש","מזון"], accepts: [] },
+  { word: "שקד", clues: ["קליפה","מרציפן","חלבון","נשנוש","מזון"], accepts: [] },
+  { word: "בוטן", clues: ["ממרח","קליפה","נשנוש","מסיבה","מזון"], accepts: [] },
+  { word: "כרית", clues: ["מיטה","ראש","רך","נוצות","ריהוט"], accepts: [] },
+  { word: "שמיכה", clues: ["חורף","מיטה","חמימות","כיסוי","ריהוט"], accepts: [] },
+  { word: "מיטה", clues: ["שינה","כרית","נוחות","מזרן","ריהוט"], accepts: [] },
+  { word: "ארון", clues: ["בגדים","דלתות","שינה","מדפים","ריהוט"], accepts: [] },
+  { word: "מראה", clues: ["השתקפות","איפור","זכוכית","קיר","חפץ"], accepts: [] },
+  { word: "מנורה", clues: ["אור","נורה","תאורה","חשמל","חפץ"], accepts: [] },
+  { word: "שטיח", clues: ["רצפה","סלון","צמר","דוגמאות","ריהוט"], accepts: [] },
+  { word: "וילון", clues: ["חלון","אור","בד","חדר","חפץ"], accepts: [] },
+  { word: "אגרטל", clues: ["פרחים","זכוכית","שולחן","נוי","חפץ"], accepts: [] },
+  { word: "מסגרת", clues: ["תמונה","קיר","עץ","נוי","חפץ"], accepts: [] },
+  { word: "מטאטא", clues: ["ניקיון","לכלוך","מקל","רצפה","חפץ"], accepts: [] },
+  { word: "מברשת", clues: ["שיניים","ניקוי","סיבים","ידית","חפץ"], accepts: [] },
+  { word: "סבון", clues: ["קצף","אמבטיה","ניקיון","ריח","חפץ"], accepts: [] },
+  { word: "מגבת", clues: ["אמבטיה","ייבוש","רך","חוף","חפץ"], accepts: [] },
+  { word: "מספריים", clues: ["גזירה","נייר","חד","להבים","כלי"], accepts: [] },
+  { word: "סיכה", clues: ["תפירה","חד","מתכת","קטנה","חפץ"], accepts: [] },
+  { word: "עט", clues: ["דיו","כתיבה","נייר","חתימה","כלי"], accepts: [] },
+  { word: "עיפרון", clues: ["גרפיט","מחק","חידוד","כתיבה","לימודים"], accepts: [] },
+  { word: "מחק", clues: ["גומי","טעות","עיפרון","ניקוי","חפץ"], accepts: [] },
+  { word: "מחברת", clues: ["דפים","לימודים","כתיבה","כריכה","חפץ"], accepts: [] },
+  { word: "תיק", clues: ["כתפיים","לימודים","רוכסן","נשיאה","חפץ"], accepts: [] },
+  { word: "ארנק", clues: ["כסף","מזומן","כיס","עור","חפץ"], accepts: [] },
+  { word: "משקפיים", clues: ["עדשות","ראייה","אף","הגנה","חפץ"], accepts: [] },
+  { word: "צעצוע", clues: ["ילדים","משחק","חנות","צבעוני","חפץ"], accepts: [] },
+  { word: "בובה", clues: ["ילדה","שיער","בגדים","צעצוע","חפץ"], accepts: [] },
+  { word: "פאזל", clues: ["חלקים","תמונה","הרכבה","קרטון","משחק"], accepts: [] },
+  { word: "קלפים", clues: ["חפיסה","פוקר","ערבוב","הימורים","משחק"], accepts: [] },
+  { word: "לוח", clues: ["כיתה","גיר","כתיבה","קיר","חפץ"], accepts: [] },
+  { word: "כדור", clues: ["משחק","עגול","קפיצות","ספורט","חפץ"], accepts: [] },
+  { word: "חבל", clues: ["קפיצה","קשירה","ארוך","דק","חפץ"], accepts: [] },
+  { word: "אופניים", clues: ["פדלים","גלגלים","קסדה","רכיבה","רכב"], accepts: [] },
+  { word: "קסדה", clues: ["ראש","הגנה","בטיחות","קשיחה","חפץ"], accepts: [] },
+  { word: "מנעול", clues: ["מפתח","דלת","קוד","שילוב","חפץ"], accepts: [] },
+  { word: "פנס", clues: ["חושך","סוללות","אור","יד","חפץ"], accepts: [] },
+  { word: "סוללה", clues: ["חשמל","מטען","אנרגיה","נטענת","חפץ"], accepts: [] },
+  { word: "כבל", clues: ["חשמל","חיבור","אורך","תקע","חפץ"], accepts: [] },
+  { word: "מטען", clues: ["חשמל","סוללה","תקע","טלפון","חפץ"], accepts: [] },
+  { word: "אוזניות", clues: ["מוזיקה","ראש","אלחוטי","שירה","חפץ"], accepts: [] },
+  { word: "רמקול", clues: ["בס","מוזיקה","חיבור","חזק","חפץ"], accepts: [] },
+  { word: "מקרר", clues: ["מטבח","אוכל","דלת","קרירות","מכשיר"], accepts: [] },
+  { word: "תנור", clues: ["אפייה","חום","מטבח","עוגה","מכשיר"], accepts: [] },
+  { word: "מיקרוגל", clues: ["חימום","מטבח","קרינה","צלחת","מכשיר"], accepts: [] },
+  { word: "קומקום", clues: ["רותחים","תה","שריקה","מטבח","כלי"], accepts: [] },
+  { word: "סיר", clues: ["בישול","מכסה","ידיות","מרק","כלי"], accepts: [] },
+  { word: "מחבת", clues: ["טיגון","ידית","ביצה","מטבח","כלי"], accepts: [] },
+  { word: "צלחת", clues: ["אוכל","עגולה","שולחן","הגשה","כלי"], accepts: [] },
+  { word: "כפית", clues: ["תה","קטנה","מתכת","עוגה","סכו\"ם"], accepts: [] },
+  { word: "מזלג", clues: ["שיניים","אוכל","מתכת","דקירה","סכו\"ם"], accepts: [] },
+  { word: "סכין", clues: ["חיתוך","חד","מטבח","ידית","כלי"], accepts: [] },
+  { word: "רוח", clues: ["נשיפה","עלים","סופה","אנרגיה","אקלים"], accepts: [] },
+  { word: "ברק", clues: ["הבזק","סערה","חשמלי","שמיים","תופעה"], accepts: [] },
+  { word: "רעם", clues: ["רעש","סערה","ברק","שמיים","תופעה"], accepts: [] },
+  { word: "קשת", clues: ["צבעים","גשם","שמש","צבעונית","תופעה"], accepts: [] },
+  { word: "אוקיינוס", clues: ["עמוק","מלוח","גלים","ספינות","מימי"], accepts: [] },
+  { word: "אגם", clues: ["מתוקים","שקט","דיג","סירה","מימי"], accepts: [] },
+  { word: "מדבר", clues: ["חול","יובש","גמלים","שרב","נוף"], accepts: [] },
+  { word: "ג'ונגל", clues: ["צפוף","לחות","קופים","טרופי","נוף"], accepts: [] },
+  { word: "מערה", clues: ["חושך","עטלפים","סלעים","תת-קרקעי","נוף"], accepts: [] },
+  { word: "לבה", clues: ["וולקני","קיצוני","אדום-כתום","זורמת","תופעה"], accepts: [] },
+  { word: "אבן", clues: ["קשה","סלע","זריקה","כבדה","טבעי"], accepts: [] },
+  { word: "חול", clues: ["חוף","מדבר","משחקים","גרגרים","נוף"], accepts: [] },
+  { word: "בוץ", clues: ["לכלוך","גשם","רטובה","מלוכלכות","חומר"], accepts: [] },
+  { word: "ערפל", clues: ["עכורה","לחות","בוקר","אפור","אקלים"], accepts: [] },
+  { word: "טל", clues: ["בוקר","רטוב","קר","אדים","תופעה"], accepts: [] },
+  { word: "כפור", clues: ["קיצוני","חורפי","לבנה","דק","תופעה"], accepts: [] },
+  { word: "סופה", clues: ["חזקות","משקעים","אזהרה","סוער","אקלים"], accepts: [] },
+  { word: "צונאמי", clues: ["ענק","רעידה","ים","הרס","אסון"], accepts: [] },
+  { word: "שביט", clues: ["זוהר","שמיים","חלל","נדיר","שמימי"], accepts: [] },
+  { word: "מטאור", clues: ["נופל","שמיים","מהיר","חלל","שמימי"], accepts: [] },
+  { word: "גלקסיה", clues: ["כוכבים","חלל","רחוקה","ענק","שמימי"], accepts: [] },
+  { word: "חלל", clues: ["ריחוף","כוכבים","אסטרונאוט","אינסופי","מקום"], accepts: [] },
+  { word: "חשמלאי", clues: ["כבלים","שקעים","זרם","תיקונים","מקצוע"], accepts: [] },
+  { word: "אינסטלטור", clues: ["צינורות","ברזים","נזילה","ברגים","מקצוע"], accepts: [] },
+  { word: "נגר", clues: ["עץ","מסור","מסמרים","רהיטים","מקצוע"], accepts: [] },
+  { word: "חייט", clues: ["מחט","בגדים","מידות","תפירה","מקצוע"], accepts: [] },
+  { word: "פסל", clues: ["שיש","גלריה","אמנות","איזמל","מקצוע"], accepts: [] },
+  { word: "צייר", clues: ["מכחול","קנבס","צבעים","גלריה","מקצוע"], accepts: [] },
+  { word: "זמר", clues: ["מיקרופון","שיר","במה","קול","מקצוע"], accepts: ["זמרת"] },
+  { word: "שחקן", clues: ["תפקיד","קולנוע","קהל","תסריט","מקצוע"], accepts: ["שחקנית"] },
+  { word: "במאי", clues: ["סרט","קאמרה","שחקנים","תסריט","מקצוע"], accepts: [] },
+  { word: "צלם", clues: ["עדשה","זום","פלאש","אירועים","מקצוע"], accepts: ["צלמת"] },
+  { word: "עיתונאי", clues: ["כתבה","חדשות","ראיון","עורך","מקצוע"], accepts: ["עיתונאית"] },
+  { word: "סופר", clues: ["עלילה","עט","דמיון","פרסום","מקצוע"], accepts: [] },
+  { word: "טייס", clues: ["גובה","מטוס","שמיים","רישיון","מקצוע"], accepts: [] },
+  { word: "דייל", clues: ["מטוס","נוסעים","מדים","שירות","מקצוע"], accepts: ["דיילת"] },
+  { word: "מלצר", clues: ["הזמנה","מסעדה","תפריט","טיפ","מקצוע"], accepts: ["מלצרית"] },
+  { word: "ברמן", clues: ["קוקטייל","בקבוקים","שייקר","משקאות","מקצוע"], accepts: [] },
+  { word: "גנן", clues: ["צמחים","גינה","מזמרה","השקיה","מקצוע"], accepts: ["גננת"] },
+  { word: "חקלאי", clues: ["שדה","יבול","טרקטור","קציר","מקצוע"], accepts: ["חקלאית"] },
+  { word: "דייג", clues: ["חכה","פיתיון","סירה","רשת","מקצוע"], accepts: ["דייגת"] },
+  { word: "שליח", clues: ["חבילה","אופנוע","כתובת","אספקה","מקצוע"], accepts: [] },
+  { word: "מוכר", clues: ["חנות","לקוחות","קופה","מבצע","מקצוע"], accepts: ["מוכרת"] },
+  { word: "קופאי", clues: ["מזומן","סופר","קבלה","ברקוד","מקצוע"], accepts: ["קופאית"] },
+  { word: "מהנדס", clues: ["תוכניות","חישובים","בנייה","פרויקט","מקצוע"], accepts: ["מהנדסת"] },
+  { word: "אדריכל", clues: ["תכנון","שרטוט","בנייה","עיצוב","מקצוע"], accepts: ["אדריכלית"] },
+  { word: "פסיכולוג", clues: ["טיפול","הקשבה","רגשות","קליניקה","מקצוע"], accepts: ["פסיכולוגית"] },
+  { word: "וטרינר", clues: ["חיות","מרפאה","זריקות","חולים","מקצוע"], accepts: ["וטרינרית"] },
+  { word: "כבאי", clues: ["שריפה","מים","הצלה","קסדה","מקצוע"], accepts: ["כבאית"] },
+  { word: "חייל", clues: ["צבא","מדים","נשק","בסיס","מקצוע"], accepts: ["חיילת"] },
+  { word: "קצין", clues: ["דרגה","צבא","פיקוד","מדים","מקצוע"], accepts: ["קצינה"] },
+  { word: "נשיא", clues: ["מדינה","בחירות","פרוטוקול","נאום","תפקיד"], accepts: [] },
+  { word: "שגריר", clues: ["נציג","בינלאומי","דיפלומטיה","מארחת","תפקיד"], accepts: ["שגרירה"] },
+  { word: "מרצה", clues: ["אוניברסיטה","הרצאה","סטודנטים","קורס","מקצוע"], accepts: [] },
+  { word: "פרופסור", clues: ["אוניברסיטה","תואר","מחקר","מומחה","תפקיד"], accepts: [] },
+  { word: "כוריאוגרף", clues: ["ריקוד","תנועה","להקה","במה","מקצוע"], accepts: [] },
+  { word: "רקדן", clues: ["תנועה","במה","בלט","מוזיקה","מקצוע"], accepts: ["רקדנית"] },
+  { word: "מאמן", clues: ["קבוצה","אימון","ספורט","אסטרטגיה","תפקיד"], accepts: ["מאמנת"] },
+  { word: "כדורסל", clues: ["דריבל","קליעה","מגרש","קפיצה","ספורט"], accepts: [] },
+  { word: "כדורעף", clues: ["רשת","חבטה","מגרש","קפיצה","ספורט"], accepts: [] },
+  { word: "טניס", clues: ["מחבט","רשת","דשא","וימבלדון","ספורט"], accepts: [] },
+  { word: "שחמט", clues: ["מלכים","משבצות","אסטרטגיה","אסטרטגי","משחק"], accepts: [] },
+  { word: "אגרוף", clues: ["כפפות","זירה","אגרופים","מכות","ספורט"], accepts: [] },
+  { word: "ג'ודו", clues: ["יפני","זריקות","חגורה","מזרן","ספורט"], accepts: [] },
+  { word: "קראטה", clues: ["יפני","בעיטות","חגורה","קיאפ","ספורט"], accepts: [] },
+  { word: "יוגה", clues: ["מזרן","נשימה","גמישות","מדיטציה","ספורט"], accepts: [] },
+  { word: "פילאטיס", clues: ["ליבה","מזרן","נשימה","חיזוק","ספורט"], accepts: [] },
+  { word: "גלישה", clues: ["גלים","ים","גלשן","איזון","ספורט"], accepts: [] },
+  { word: "סקי", clues: ["שלג","הרים","מגלשיים","חורף","ספורט"], accepts: [] },
+  { word: "סנובורד", clues: ["שלג","לוח","הרים","חורף","ספורט"], accepts: [] },
+  { word: "צלילה", clues: ["מים","חמצן","אלמוגים","מסכה","ספורט"], accepts: [] },
+  { word: "קיאק", clues: ["משוט","נהר","קטנה","איזון","ספורט"], accepts: [] },
+  { word: "חתירה", clues: ["משוטים","סירה","מים","קבוצה","ספורט"], accepts: [] },
+  { word: "אתלטיקה", clues: ["מסלול","ריצה","אולימפיאדה","שיא","ספורט"], accepts: [] },
+  { word: "ג'אגלינג", clues: ["כדורים","ידיים","קרקס","תיאום","מיומנות"], accepts: [] },
+  { word: "ריקוד", clues: ["תנועה","מוזיקה","במה","קצב","אמנות"], accepts: [] },
+  { word: "באלט", clues: ["בלרינה","טוטו","במה","קלאסי","אמנות"], accepts: [] },
+  { word: "ציור", clues: ["מכחול","צבעים","קנבס","גלריה","אמנות"], accepts: [] },
+  { word: "פיסול", clues: ["חומר","איזמל","צורה","גלריה","אמנות"], accepts: [] },
+  { word: "צילום", clues: ["מצלמה","עדשה","תמונה","אור","אמנות"], accepts: [] },
+  { word: "תפירה", clues: ["מחט","חוט","בד","סיכות","מלאכה"], accepts: [] },
+  { word: "סריגה", clues: ["צמר","מסרגות","סוודר","לולאות","מלאכה"], accepts: [] },
+  { word: "בישול", clues: ["מטבח","מתכון","סיר","תבלינים","מלאכה"], accepts: [] },
+  { word: "אפייה", clues: ["תנור","קמח","עוגה","מתכון","מלאכה"], accepts: [] },
+  { word: "גינון", clues: ["צמחים","אדמה","השקיה","זריעה","תחביב"], accepts: [] },
+  { word: "כתיבה", clues: ["עט","מילים","סיפור","דף","מלאכה"], accepts: [] },
+  { word: "רכיבה", clues: ["אוכף","פרסה","איזון","רסן","ספורט"], accepts: [] },
+  { word: "טיפוס", clues: ["הרים","חבלים","פסגה","אחיזה","ספורט"], accepts: [] },
+  { word: "קפיצה", clues: ["גובה","ריחוף","דחיפה","נחיתה","ספורט"], accepts: [] },
+  { word: "זריקה", clues: ["כדור","מרחק","יד","מטרה","ספורט"], accepts: [] },
+  { word: "אופנוע", clues: ["גלגלים","קסדה","מנוע","מהירות","רכב"], accepts: [] },
+  { word: "קורקינט", clues: ["דחיפה","עירוני","קליל","קטנים","רכב"], accepts: [] },
+  { word: "סירה", clues: ["מים","משוט","דיג","נמל","שיט"], accepts: [] },
+  { word: "ספינה", clues: ["ים","נוסעים","נמל","ענקית","שיט"], accepts: [] },
+  { word: "צוללת", clues: ["סמויה","צבא","פריסקופ","אוקיינוס","שיט"], accepts: [] },
+  { word: "הליקופטר", clues: ["מדחפים","ריחוף","שמיים","הצלה","טיס"], accepts: [] },
+  { word: "רכבל", clues: ["הרים","כבלים","נוסעים","סקי","רכב"], accepts: [] },
+  { word: "ג'יפ", clues: ["שטח","עמיד","צבאי","חוסן","רכב"], accepts: [] },
+  { word: "משאית", clues: ["מטען","כביש","נהג","ענקית","רכב"], accepts: [] },
+  { word: "טרקטור", clues: ["שדה","חקלאות","גדולים","גרירה","רכב"], accepts: [] },
+  { word: "עגלה", clues: ["סוסים","קניות","גלגלים","דחיפה","הובלה"], accepts: [] },
+  { word: "סקייטבורד", clues: ["גלגלים","קרשים","טריקים","רחוב","רכיבה"], accepts: [] },
+  { word: "עין", clues: ["ראייה","ריס","אישון","דמעה","איבר"], accepts: [] },
+  { word: "אוזן", clues: ["שמיעה","עגיל","תנוך","צליל","איבר"], accepts: [] },
+  { word: "אף", clues: ["ריח","נשימה","נזלת","עיטוש","איבר"], accepts: [] },
+  { word: "פה", clues: ["דיבור","שיניים","אכילה","שפתיים","איבר"], accepts: [] },
+  { word: "שן", clues: ["לעיסה","טיפול","חיוך","כאב","איבר"], accepts: [] },
+  { word: "שיער", clues: ["תספורת","שמפו","צמה","קרחת","גופני"], accepts: [] },
+  { word: "יד", clues: ["אצבעות","אגרוף","כתיבה","כפפה","איבר"], accepts: [] },
+  { word: "רגל", clues: ["הליכה","נעל","ברך","ריצה","איבר"], accepts: [] },
+  { word: "אצבע", clues: ["יד","טבעת","ציפורן","הצבעה","איבר"], accepts: [] },
+  { word: "ברך", clues: ["כריעה","מפרק","כאב","ריצה","איבר"], accepts: [] },
+  { word: "מרפק", clues: ["מפרק","זרוע","דחיפה","כאב","איבר"], accepts: [] },
+  { word: "כתף", clues: ["תרמיל","מפרק","הרמה","צוואר","איבר"], accepts: [] },
+  { word: "גב", clues: ["משענת","שכיבה","שדרה","תיק","איבר"], accepts: [] },
+  { word: "בטן", clues: ["עיכול","שובע","טבור","צחוק","איבר"], accepts: [] },
+  { word: "ריאה", clues: ["נשימה","אוויר","עישון","חמצן","איבר"], accepts: [] },
+  { word: "כבד", clues: ["רעל","אלכוהול","סינון","פנימי","איבר"], accepts: [] },
+  { word: "כליה", clues: ["סינון","שתן","השתלה","פנימי","איבר"], accepts: [] },
+  { word: "מוח", clues: ["חשיבה","זיכרון","גלים","פנימי","איבר"], accepts: [] },
+  { word: "עצם", clues: ["שלד","שבר","גבס","סידן","גופני"], accepts: [] },
+  { word: "שריר", clues: ["כוח","אימון","כאב","התכווצות","גופני"], accepts: [] },
+  { word: "עור", clues: ["שיזוף","מגע","קרם","חיצונית","גופני"], accepts: [] },
+  { word: "דם", clues: ["אדום","לב","תרומה","עירוי","נוזלי"], accepts: [] },
+  { word: "שמחה", clues: ["חיוך","צחוק","חגיגה","אור","רגש"], accepts: [] },
+  { word: "עצב", clues: ["דמעות","בכי","מורכן","גשם","רגש"], accepts: [] },
+  { word: "כעס", clues: ["צעקות","זעם","מתפוצץ","פיצוץ","רגש"], accepts: [] },
+  { word: "פחד", clues: ["רעד","בריחה","חושך","דופק","רגש"], accepts: [] },
+  { word: "הפתעה", clues: ["תדהמה","מסיבה","פתאומי","קפיצה","רגש"], accepts: [] },
+  { word: "גאווה", clues: ["הישג","זקוף","הכרה","ניצחון","רגש"], accepts: [] },
+  { word: "קנאה", clues: ["השוואה","רכושני","תחרותיות","תחרות","רגש"], accepts: [] },
+  { word: "בדידות", clues: ["לבד","שקט","געגוע","ריקנות","רגש"], accepts: [] },
+  { word: "נחישות", clues: ["מטרה","התמדה","אגרוף","ניצחון","תכונה"], accepts: [] },
+  { word: "תקווה", clues: ["אופטימיות","אמונה","עתיד","ציפייה","רגש"], accepts: [] },
+  { word: "אכזבה", clues: ["התפכחות","מורכן","אנחה","כישלון","רגש"], accepts: [] },
+  { word: "בושה", clues: ["הסמקה","מושפל","שגיאה","מבוכה","רגש"], accepts: [] },
+  { word: "אשמה", clues: ["מצפון","סליחה","טעות","הודאה","רגש"], accepts: [] },
+  { word: "רוגע", clues: ["נשימה","שקט","שלווה","מדיטציה","רגש"], accepts: [] },
+  { word: "התרגשות", clues: ["דופק","ציפייה","אירוע","אנרגיה","נפשי"], accepts: [] },
+  { word: "שעמום", clues: ["פיהוק","איטיות","ישנוני","אדיש","רגש"], accepts: [] },
+  { word: "סקרנות", clues: ["שאלות","חקירה","חקרנית","גילוי","תכונה"], accepts: [] },
+  { word: "אומץ", clues: ["התמודדות","התגברות","גיבור","סיכון","תכונה"], accepts: [] },
+  { word: "מבחן", clues: ["ציון","לחץ","שאלות","הכנה","לימודים"], accepts: [] },
+  { word: "הפסקה", clues: ["חצר","אוכל","משחק","צלצול","לימודים"], accepts: [] },
+  { word: "ספרנית", clues: ["ספרים","שקט","השאלה","מדפים","מקצוע"], accepts: [] },
+  { word: "מחשבון", clues: ["מספרים","כפתורים","חישוב","מתמטיקה","כלי"], accepts: [] },
+  { word: "גיאומטריה", clues: ["משולשים","זוויות","צורות","שרטוט","לימודי"], accepts: [] },
+  { word: "היסטוריה", clues: ["עבר","תאריכים","מלחמות","לימוד","לימודי"], accepts: [] },
+  { word: "גיאוגרפיה", clues: ["מפות","מדינות","אקלים","יבשות","לימודי"], accepts: [] },
+  { word: "ביולוגיה", clues: ["תאים","חיות","דנ\"א","מיקרוסקופ","לימודי"], accepts: [] },
+  { word: "כימיה", clues: ["מבחנות","יסודות","תגובה","מעבדה","לימודי"], accepts: [] },
+  { word: "פיזיקה", clues: ["כוח","נוסחאות","ניוטון","אנרגיה","לימודי"], accepts: [] },
+  { word: "תנך", clues: ["תורה","נביאים","סיפורים","תפילה","ספר"], accepts: [] },
+  { word: "פסח", clues: ["מצה","סדר","חרות","אביב","חג"], accepts: [] },
+  { word: "סוכות", clues: ["סוכה","לולב","אושפיזין","סתיו","חג"], accepts: [] },
+  { word: "חנוכה", clues: ["סביבון","נרות","סופגניות","שמן","חג"], accepts: [] },
+  { word: "פורים", clues: ["תחפושות","מגילה","משולש","מתנות","חג"], accepts: [] },
+  { word: "שבועות", clues: ["תורה","חלב","ביכורים","קיץ","חג"], accepts: [] },
+  { word: "לוויה", clues: ["קבורה","אבל","מצבה","קדיש","טקס"], accepts: [] },
+  { word: "דגל", clues: ["צבעים","תורן","מדינה","הנפה","סמל"], accepts: [] },
+  { word: "המנון", clues: ["לאומי","עמידה","מדינה","גאווה","שיר"], accepts: [] },
+  { word: "כסף", clues: ["מטבעות","ארנק","קנייה","בנק","תשלום"], accepts: [] },
+  { word: "מטבע", clues: ["עגול","מתכת","הטבעה","אספנות","כסף"], accepts: [] },
+  { word: "שטר", clues: ["נייר","ערך","ארנק","מספור","כסף"], accepts: [] },
+  { word: "בנק", clues: ["חשבון","הלוואה","כספומט","פקיד","מוסד"], accepts: [] },
+  { word: "חשבון", clues: ["יתרה","הפקדה","משיכה","בנק","פיננסי"], accepts: [] },
+  { word: "אשראי", clues: ["כרטיס","הלוואה","ריבית","רכישה","פיננסי"], accepts: [] },
+  { word: "חתימה", clues: ["שם","מסמך","עט","אימות","סימן"], accepts: [] },
+  { word: "בול", clues: ["מעטפה","דואר","אספנות","הדבקה","חפץ"], accepts: [] },
+  { word: "מעטפה", clues: ["מכתב","הדבקה","כתובת","בול","חפץ"], accepts: [] },
+  { word: "חבילה", clues: ["משלוח","קרטון","הפתעה","קשירה","חפץ"], accepts: [] },
+  { word: "משלוח", clues: ["הזמנה","חבילה","כתובת","מעקב","שירות"], accepts: [] },
+  { word: "אינטרנט", clues: ["רשת","גלישה","דפדפן","אתרים","טכנולוגיה"], accepts: [] },
+  { word: "סיסמה", clues: ["התחברות","אבטחה","שכחתי","תווים","קוד"], accepts: [] },
+  { word: "מצלמה", clues: ["עדשה","פלאש","זום","תיעוד","מכשיר"], accepts: [] },
+  { word: "סרטון", clues: ["וידאו","צפיות","עריכה","שיתוף","מדיה"], accepts: [] },
+  { word: "פודקאסט", clues: ["האזנה","אוזניות","פרקים","מיקרופון","מדיה"], accepts: [] },
+  { word: "רדיו", clues: ["תחנה","שידור","תדר","מוזיקה","מכשיר"], accepts: [] },
+  { word: "טלוויזיה", clues: ["מסך","שלט","ערוצים","צפייה","מכשיר"], accepts: [] },
+  { word: "מקרן", clues: ["מסך","הצגה","אור","מצגת","מכשיר"], accepts: [] },
+  { word: "מיקרופון", clues: ["קול","הגברה","שירה","הקלטה","מכשיר"], accepts: [] },
+  { word: "נגן", clues: ["מוזיקה","אוזניות","פלייליסט","הפעלה","מכשיר"], accepts: [] },
+  { word: "ירושלים", clues: ["הכותל","עתיקה","בירה","קדושה","עיר"], accepts: [] },
+  { word: "איטליה", clues: ["פיצה","מגף","קולוסיאום","פסטה","מדינה"], accepts: [] },
+  { word: "צרפת", clues: ["רומנטית","קרואסון","פריז","יין","מדינה"], accepts: [] },
+  { word: "ספרד", clues: ["פלמנקו","שוורים","טאפאס","מדריד","מדינה"], accepts: [] },
+  { word: "יוון", clues: ["אולימפוס","איים","זית","אתונה","מדינה"], accepts: [] },
+  { word: "מצרים", clues: ["פירמידות","נילוס","פרעה","מדבר","מדינה"], accepts: [] },
+  { word: "הודו", clues: ["תבלינים","קארי","בוליווד","גנגס","מדינה"], accepts: [] },
+  { word: "סין", clues: ["חומה","לחימה","במבוק","אורז","מדינה"], accepts: [] },
+  { word: "יפן", clues: ["סושי","פוג'י","סמוראי","אנימה","מדינה"], accepts: [] },
+  { word: "ברזיל", clues: ["קרנבל","אמזונס","קפוארה","כדורגל","מדינה"], accepts: [] },
+  { word: "קנדה", clues: ["סירופ","קוטבי","שלג","שלגית","מדינה"], accepts: [] },
+  { word: "אוסטרליה", clues: ["קנגורו","אלמוגים","מדבר","קואלה","יבשת"], accepts: [] },
+  { word: "רוסיה", clues: ["קרמלין","שלג","וודקה","ענקית","מדינה"], accepts: [] },
+  { word: "גרמניה", clues: ["בירה","מכוניות","אוקטוברפסט","ברלין","מדינה"], accepts: [] },
+  { word: "חולצה", clues: ["כפתורים","שרוולים","ארון","גיהוץ","בגד"], accepts: [] },
+  { word: "מכנסיים", clues: ["רגליים","חגורה","כיסים","ג'ינס","בגד"], accepts: [] },
+  { word: "שמלה", clues: ["אירוע","נשית","צבעונית","מידה","בגד"], accepts: [] },
+  { word: "חצאית", clues: ["נשית","ברך","קפלים","אירוע","בגד"], accepts: [] },
+  { word: "מעיל", clues: ["חורף","כפתורים","ברדס","קור","בגד"], accepts: [] },
+  { word: "סוודר", clues: ["צמר","חורף","שרוולים","חם","בגד"], accepts: [] },
+  { word: "כפפות", clues: ["אצבעות","חורף","ידיים","צמר","לבוש"], accepts: [] },
+  { word: "צעיף", clues: ["צוואר","חורף","אריגה","צבעוני","לבוש"], accepts: [] },
+  { word: "גרביים", clues: ["רגליים","נעליים","זוג","צמר","לבוש"], accepts: [] },
+  { word: "מגפיים", clues: ["גשם","שלג","גבוהים","גומי","נעליים"], accepts: [] },
+  { word: "כובע", clues: ["ראש","שמש","מצחייה","צמר","לבוש"], accepts: [] },
+  { word: "עניבה", clues: ["צוואר","חליפה","קשירה","עסקים","לבוש"], accepts: [] },
+  { word: "חגורה", clues: ["מותניים","אבזם","מכנסיים","עור","לבוש"], accepts: [] },
+  { word: "פיג'מה", clues: ["שינה","נוחות","לילה","בית","בגד"], accepts: [] },
+  { word: "תחתונים", clues: ["פנימית","גומי","נוחות","יומיומי","בגד"], accepts: [] },
+  { word: "אמא", clues: ["ילדים","אהבה","בישול","חיבוק","הורה"], accepts: [] },
+  { word: "אבא", clues: ["ילדים","הגנה","עבודה","חיבוק","הורה"], accepts: [] },
+  { word: "סבא", clues: ["נכדים","סיפורים","חוכמה","זקן","משפחתי"], accepts: [] },
+  { word: "סבתא", clues: ["נכדים","עוגות","חוכמה","חיבוק","משפחתי"], accepts: [] },
+  { word: "אח", clues: ["משפחה","שיתוף","מריבות","ילדות","משפחתי"], accepts: [] },
+  { word: "אחות", clues: ["משפחה","אחווה","ילדות","שיתוף","משפחתי"], accepts: [] },
+  { word: "דוד", clues: ["משפחה","מתנות","ביקור","קרוב","משפחתי"], accepts: [] },
+  { word: "דודה", clues: ["משפחה","מתנות","ביקור","חמימות","משפחתי"], accepts: [] },
+  { word: "נכד", clues: ["זקנים","ילד","משפחה","ביקור","משפחתי"], accepts: [] },
+  { word: "נכדה", clues: ["זקנים","ילדה","משפחה","ביקור","משפחתי"], accepts: [] },
+  { word: "משפחה", clues: ["יחד","אהבה","שולחן","בית","חברתית"], accepts: [] },
+  { word: "תאום", clues: ["זהות","לידה","דמיון","כפיל","משפחתי"], accepts: [] },
+  { word: "חתן", clues: ["חתונה","טבעת","כלה","חופה","אירוע"], accepts: [] },
+  { word: "כלה", clues: ["חתונה","לבנה","חתן","חופה","אירוע"], accepts: [] },
+  { word: "אדום", clues: ["אהבה","דם","עגבנייה","אזהרה","צבע"], accepts: [] },
+  { word: "כחול", clues: ["שמיים","ים","קור","ישראלי","צבע"], accepts: [] },
+  { word: "ירוק", clues: ["דשא","טבע","קנאה","רמזור","צבע"], accepts: [] },
+  { word: "צהוב", clues: ["שמש","בננה","אזהרה","זהב","צבע"], accepts: [] },
+  { word: "סגול", clues: ["מלכות","ענבים","חציל","שקיעה","צבע"], accepts: [] },
+  { word: "כתום", clues: ["תפוז","שקיעה","גזר","בטיחות","צבע"], accepts: [] },
+  { word: "ורוד", clues: ["נשיות","נפוח","פרחים","רגישות","צבע"], accepts: [] },
+  { word: "שחור", clues: ["לילה","אבל","פחם","אלגנטיות","צבע"], accepts: [] },
+  { word: "חום", clues: ["אדמה","שוקולד","עץ","קפה","צבע"], accepts: [] },
+  { word: "אפור", clues: ["ענן","עכבר","בטון","ניטרלי","צבע"], accepts: [] },
+  { word: "תכלת", clues: ["בהירים","ים","ישראלי","קיץ","צבע"], accepts: [] },
+  { word: "זהב", clues: ["מדליה","תכשיטים","יוקרה","מלכים","יקרה"], accepts: [] },
+  { word: "טורקיז", clues: ["קריבי","תכשיטים","תכשיט","כחול-ירוק","צבע"], accepts: [] },
+  { word: "דקה", clues: ["שניות","שעון","קצר","המתנה","זמני"], accepts: [] },
+  { word: "שבוע", clues: ["ימים","מנוחה","יומן","עבודה","זמני"], accepts: [] },
+  { word: "חודש", clues: ["יומן","ירח","שכר","חגיגות","זמני"], accepts: [] },
+  { word: "שנה", clues: ["חודשים","חגיגה","עונות","חגים","זמני"], accepts: [] },
+  { word: "עשור", clues: ["נוסטלגי","שינויים","נוסטלגיה","דור","זמני"], accepts: [] },
+  { word: "מאה", clues: ["היסטורית","ישנה","עגול","גדול","יחידה"], accepts: [] },
+  { word: "חצות", clues: ["קסום","אפל","קסם","שעון","יומי"], accepts: [] },
+  { word: "צהריים", clues: ["חם","לוהטת","אמצע","מנוחה","יומי"], accepts: [] },
+  { word: "תופים", clues: ["הקשה","קצב","מקלות","להקה","נגינה"], accepts: [] },
+  { word: "חליל", clues: ["נשיפה","עץ","חורים","קלאסי","נגינה"], accepts: [] },
+  { word: "כינור", clues: ["קשת","מיתרים","תזמורת","קלאסי","נגינה"], accepts: [] },
+  { word: "פסנתר", clues: ["מקשים","שחור-לבן","תזמורת","ידיים","נגינה"], accepts: [] },
+  { word: "סקסופון", clues: ["ג'אז","נשיפה","פליז","עקום","נגינה"], accepts: [] },
+  { word: "חצוצרה", clues: ["נשיפה","פליז","ג'אז","חד","נגינה"], accepts: [] },
+  { word: "אקורדיון", clues: ["מפוח","כפתורים","נדודים","עממי","נגינה"], accepts: [] },
+  { word: "טאבלט", clues: ["מגע","אפליקציות","נייד","ביניים","מכשיר"], accepts: [] },
+  { word: "רחפן", clues: ["מרחוק","מדחפים","אווירי","שלט","מכשיר"], accepts: [] },
+  { word: "רובוט", clues: ["תכנות","מתכת","אוטומציה","עתידני","מכשיר"], accepts: [] },
+  { word: "מדפסת", clues: ["דיו","נייר","מסמכים","מחשב","מכשיר"], accepts: [] },
+  { word: "סורק", clues: ["מסמכים","אור","קובץ","משרד","מכשיר"], accepts: [] },
+  { word: "קונסולה", clues: ["וידאו","שלט","טלוויזיה","שחקנים","מכשיר"], accepts: [] },
+  { word: "מונופול", clues: ["קוביות","מזויף","נדל\"ן","קופה","לוח"], accepts: [] },
+  { word: "סודוקו", clues: ["מספרים","ריבועים","היגיון","עיתון","משחק"], accepts: [] },
+  { word: "טריוויה", clues: ["שאלות","כללי","תשובות","תחרות","משחק"], accepts: [] },
+  { word: "בינגו", clues: ["מספרים","כרטיס","קריאה","קשישים","משחק"], accepts: [] },
+  { word: "גשר", clues: ["נהר","תמיכה","כביש","נוף","מבנה"], accepts: [] },
+  { word: "מגדל", clues: ["גובה","קומות","תצפית","עיר","מבנה"], accepts: [] },
+  { word: "טירה", clues: ["חפיר","אבירים","עתיקה","מלך","מבנה"], accepts: [] },
+  { word: "מסגד", clues: ["מינרט","תפילה","אסלאם","שטיח","דתי"], accepts: [] },
+  { word: "כנסייה", clues: ["פעמון","תפילה","נצרות","ויטראז'","דתי"], accepts: [] },
+  { word: "מוזיאון", clues: ["תערוכות","אמנות","כניסה","היסטוריה","תרבותי"], accepts: [] },
+  { word: "פארק", clues: ["ספסלים","עצים","טיילת","ילדים","ציבורי"], accepts: [] },
+  { word: "כיכר", clues: ["עירוני","מזרקה","פסל","מפגש","ציבורי"], accepts: [] },
+  { word: "שוק", clues: ["דוכנים","מיקוח","ירקות","המולה","מסחרי"], accepts: [] },
+  { word: "קניון", clues: ["חנויות","מזגן","פודקורט","שופינג","קניות"], accepts: [] },
+  { word: "מלון", clues: ["חדרים","קבלה","חופשה","בריכה","אירוח"], accepts: [] },
+  { word: "תיאטרון", clues: ["הצגה","במה","שחקנים","קהל","תרבותי"], accepts: [] },
+  { word: "קולנוע", clues: ["רחב","פופקורן","כרטיס","סרט","תרבותי"], accepts: [] },
+  { word: "אצטדיון", clues: ["ענק","מגרש","תחרות","יציעים","ספורטיבי"], accepts: [] },
+];
+
+const ADMIN_EMAIL = "omerzaguril@gmail.com";
+const OVERRIDES_KEY = "wordCrackOverrides_v1";
+
+function loadOverrides(){
+  try{
+    return JSON.parse(localStorage.getItem(OVERRIDES_KEY) || '{}');
+  }catch(e){
+    return {};
+  }
+}
+
+function saveOverrides(ov){
+  try{
+    localStorage.setItem(OVERRIDES_KEY, JSON.stringify(ov));
+    return true;
+  }catch(e){
+    return false;
+  }
+}
+
+function getEffectiveWords(){
+  const ov = loadOverrides();
+  return WORDS_DEFAULT.map(w=>{
+    if(ov[w.word] && Array.isArray(ov[w.word].clues) && ov[w.word].clues.length === 5){
+      return { word: w.word, clues: [...ov[w.word].clues], accepts: w.accepts };
+    }
+    return w;
+  });
+}
+
+const MAX_CLUES = 5;
+
+let pool = [];
+let current = null;
+let clueIndex = 0;
+let wrongGuesses = [];
+let score = 0;
+let timeLeft = 120; // seconds
+let timerInterval = null;
+let history = [];
+let currentRecorded = true; // true when there's no in-progress word to record
+let roundLocked = false; // true during the brief solved-word reveal pause
+
+const timerNum = document.getElementById('timerNum');
+const timerBox = document.getElementById('timer');
+const scoreNum = document.getElementById('scoreNum');
+const cluesEl = document.getElementById('clues');
+const clueCount = document.getElementById('clueCount');
+const guessInput = document.getElementById('guess');
+const guessBtn = document.getElementById('guessBtn');
+const skipBtn = document.getElementById('skipBtn');
+const feedback = document.getElementById('feedback');
+const wgList = document.getElementById('wgList');
+
+const startScreen = document.getElementById('startScreen');
+const gameScreen = document.getElementById('gameScreen');
+const endScreen = document.getElementById('endScreen');
+const mainMenu = document.getElementById('mainMenu');
+const exitModal = document.getElementById('exitModal');
+const adminGateScreen = document.getElementById('adminGateScreen');
+const adminEditorScreen = document.getElementById('adminEditorScreen');
+const exportModal = document.getElementById('exportModal');
+
+document.getElementById('openGameTile').addEventListener('click', ()=>{
+  mainMenu.classList.add('hidden');
+  startScreen.classList.remove('hidden');
+});
+document.getElementById('openAdminTile').addEventListener('click', ()=>{
+  mainMenu.classList.add('hidden');
+  adminGateScreen.classList.remove('hidden');
+  document.getElementById('adminEmailInput').value = '';
+  document.getElementById('adminGateFeedback').textContent = ' ';
+  document.getElementById('adminGateFeedback').className = 'feedback';
+});
+document.getElementById('adminGateBackBtn').addEventListener('click', ()=>{
+  adminGateScreen.classList.add('hidden');
+  mainMenu.classList.remove('hidden');
+});
+document.getElementById('adminEnterBtn').addEventListener('click', tryAdminEnter);
+document.getElementById('adminEmailInput').addEventListener('keydown', (e)=>{ if(e.key === 'Enter') tryAdminEnter(); });
+document.getElementById('adminBackBtn').addEventListener('click', ()=>{
+  adminEditorScreen.classList.add('hidden');
+  mainMenu.classList.remove('hidden');
+});
+document.getElementById('adminSearch').addEventListener('input', renderAdminList);
+document.getElementById('adminExportBtn').addEventListener('click', openExportModal);
+document.getElementById('exportCloseBtn').addEventListener('click', ()=> exportModal.classList.add('hidden'));
+document.getElementById('exportCopyBtn').addEventListener('click', copyExportText);
+document.getElementById('startBtn').addEventListener('click', startGame);
+document.getElementById('restartBtn').addEventListener('click', startGame);
+document.getElementById('endToMenuBtn').addEventListener('click', goToMainMenu);
+document.getElementById('exitBtn').addEventListener('click', openExitModal);
+document.getElementById('exitYesBtn').addEventListener('click', confirmExit);
+document.getElementById('exitNoBtn').addEventListener('click', cancelExit);
+guessBtn.addEventListener('click', tryGuess);
+skipBtn.addEventListener('click', skipWord);
+guessInput.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') tryGuess(); });
+
+function shuffle(arr){
+  const a = [...arr];
+  for(let i = a.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i+1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function startGame(){
+  pool = shuffle(getEffectiveWords());
+  score = 0;
+  timeLeft = 120;
+  history = [];
+  scoreNum.textContent = '0';
+  updateTimerDisplay();
+  timerBox.classList.remove('low');
+
+  mainMenu.classList.add('hidden');
+  startScreen.classList.add('hidden');
+  endScreen.classList.add('hidden');
+  gameScreen.classList.remove('hidden');
+
+  nextWord();
+  startTimer();
+
+  guessInput.focus();
+}
+
+function startTimer(){
+  clearInterval(timerInterval);
+  timerInterval = setInterval(()=>{
+    timeLeft--;
+    updateTimerDisplay();
+    if(timeLeft <= 20) timerBox.classList.add('low');
+    if(timeLeft <= 0){
+      timeLeft = 0;
+      updateTimerDisplay();
+      endGame();
+    }
+  }, 1000);
+}
+
+function openExitModal(){
+  clearInterval(timerInterval);
+  exitModal.classList.remove('hidden');
+}
+
+function cancelExit(){
+  exitModal.classList.add('hidden');
+  if(timeLeft > 0) startTimer();
+  guessInput.focus();
+}
+
+function confirmExit(){
+  clearInterval(timerInterval);
+  exitModal.classList.add('hidden');
+  goToMainMenu();
+}
+
+function goToMainMenu(){
+  clearInterval(timerInterval);
+  gameScreen.classList.add('hidden');
+  endScreen.classList.add('hidden');
+  startScreen.classList.add('hidden');
+  mainMenu.classList.remove('hidden');
+}
+
+function updateTimerDisplay(){
+  const m = Math.floor(Math.max(timeLeft,0) / 60);
+  const s = Math.max(timeLeft,0) % 60;
+  timerNum.textContent = m + ':' + String(s).padStart(2,'0');
+}
+
+function nextWord(){
+  if(pool.length === 0) pool = shuffle(getEffectiveWords());
+  current = pool.pop();
+  clueIndex = 0;
+  wrongGuesses = [];
+  currentRecorded = false;
+  guessInput.value = '';
+  feedback.textContent = ' ';
+  feedback.className = 'feedback';
+  renderClues();
+  renderWrongGuesses();
+  guessInput.focus();
+}
+
+function skipWord(){
+  if(gameScreen.classList.contains('hidden')) return;
+  if(!exitModal.classList.contains('hidden')) return;
+  if(roundLocked) return;
+  if(timeLeft <= 0) return;
+  recordCurrentWord(false, 0);
+  nextWord();
+}
+
+function renderClues(){
+  cluesEl.innerHTML = '';
+  for(let i = 0; i <= clueIndex; i++){
+    const div = document.createElement('div');
+    div.className = 'clue-word' + (i > 0 ? ' secondary' : '');
+    div.textContent = current.clues[i];
+    cluesEl.appendChild(div);
+  }
+  clueCount.textContent = 'רמז ' + (clueIndex + 1) + ' מתוך ' + MAX_CLUES;
+}
+
+function renderWrongGuesses(){
+  wgList.innerHTML = '';
+  wrongGuesses.forEach(w=>{
+    const span = document.createElement('span');
+    span.className = 'wg-chip';
+    span.textContent = w;
+    wgList.appendChild(span);
+  });
+}
+
+function normalize(str){
+  return str.trim().replace(/[֑-ׇ]/g,'').replace(/["'׳״]/g,'');
+}
+
+function autoPluralVariants(word){
+  const v = [];
+  if(word.endsWith('ה')) v.push(word.slice(0,-1) + 'ות');
+  v.push(word + 'ים');
+  v.push(word + 'ות');
+  return v;
+}
+
+function isCorrectGuess(val){
+  const normVal = normalize(val);
+  const target = normalize(current.word);
+  if(normVal === target) return true;
+  if(current.accepts.some(a => normalize(a) === normVal)) return true;
+  if(autoPluralVariants(current.word).some(v => normalize(v) === normVal)) return true;
+  return false;
+}
+
+function recordCurrentWord(solved, pts){
+  if(!current || currentRecorded) return;
+  history.push({
+    word: current.word,
+    solved: solved,
+    guesses: [...wrongGuesses],
+    cluesUsed: clueIndex + 1,
+    cluesShown: current.clues.slice(0, clueIndex + 1),
+    points: pts || 0
+  });
+  currentRecorded = true;
+}
+
+function pointsForClueCount(cluesShown){
+  // 1 clue -> 5 pts, 2 -> 4, 3 -> 3, 4 -> 2, 5 -> 1
+  return Math.max(1, (MAX_CLUES + 1) - cluesShown);
+}
+
+function tryGuess(){
+  if(gameScreen.classList.contains('hidden')) return;
+  if(!exitModal.classList.contains('hidden')) return;
+  if(roundLocked) return;
+  const rawVal = guessInput.value;
+  const val = normalize(rawVal);
+  if(!val) return;
+
+  if(isCorrectGuess(val)){
+    const cluesShown = clueIndex + 1;
+    const pts = pointsForClueCount(cluesShown);
+    score += pts;
+    scoreNum.textContent = score;
+    feedback.textContent = '‎+' + pts + ' נקודות (עם ' + cluesShown + ' רמזים)';
+    feedback.className = 'feedback correct';
+    recordCurrentWord(true, pts);
+
+    roundLocked = true;
+    clearInterval(timerInterval);
+    guessInput.disabled = true;
+    guessInput.value = '';
+    cluesEl.innerHTML = '<div class="solved-reveal">✓ ' + current.word + '</div>';
+
+    setTimeout(()=>{
+      guessInput.disabled = false;
+      roundLocked = false;
+      if(timeLeft > 0){
+        nextWord();
+        startTimer();
+      } else {
+        endGame();
+      }
+    }, 500);
+  } else {
+    if(rawVal.trim()){
+      wrongGuesses.push(rawVal.trim());
+      renderWrongGuesses();
+    }
+    feedback.textContent = 'לא זה — הנה רמז נוסף';
+    feedback.className = 'feedback';
+    guessInput.classList.add('wrong');
+    setTimeout(()=> guessInput.classList.remove('wrong'), 300);
+
+    if(clueIndex < MAX_CLUES - 1){
+      clueIndex++;
+      renderClues();
+    }
+  }
+  guessInput.value = '';
+}
+
+function endGame(){
+  clearInterval(timerInterval);
+  recordCurrentWord(false, 0);
+  gameScreen.classList.add('hidden');
+  endScreen.classList.remove('hidden');
+  document.getElementById('finalScore').textContent = score;
+  renderReport();
+}
+
+function renderReport(){
+  const reportEl = document.getElementById('report');
+  reportEl.innerHTML = '';
+
+  if(history.length === 0){
+    reportEl.innerHTML = '<div class="report-empty">לא הספקת להתחיל אף חידה הפעם</div>';
+    return;
+  }
+
+  history.forEach(item=>{
+    const div = document.createElement('div');
+    div.className = 'report-item';
+
+    const head = document.createElement('div');
+    head.className = 'report-head';
+
+    const icon = document.createElement('span');
+    icon.className = 'report-icon ' + (item.solved ? 'solved' : 'unsolved');
+    icon.textContent = item.solved ? '✓' : '✗';
+    head.appendChild(icon);
+
+    const wordSpan = document.createElement('span');
+    wordSpan.textContent = item.word;
+    head.appendChild(wordSpan);
+
+    if(item.solved){
+      const ptsSpan = document.createElement('span');
+      ptsSpan.className = 'report-pts';
+      ptsSpan.textContent = '+' + item.points + ' נק׳';
+      head.appendChild(ptsSpan);
+    }
+
+    div.appendChild(head);
+
+    const detail = document.createElement('div');
+    detail.className = 'report-detail';
+
+    const guessesText = item.guesses.length
+      ? item.guesses.join(', ')
+      : 'ללא ניחושים שגויים';
+
+    let html = 'ניחושים שלך: ' + guessesText;
+    html += '<br>הרמזים שקיבלת: ' + item.cluesShown.join(', ');
+    if(!item.solved){
+      html += '<br>התשובה הנכונה: <b>' + item.word + '</b>';
+    }
+    detail.innerHTML = html;
+
+    div.appendChild(detail);
+    reportEl.appendChild(div);
+  });
+}
+
+/* ===================== ADMIN EDITOR ===================== */
+
+let adminExpandedWord = null;
+
+function tryAdminEnter(){
+  const val = document.getElementById('adminEmailInput').value.trim().toLowerCase();
+  const fb = document.getElementById('adminGateFeedback');
+  if(val === ADMIN_EMAIL){
+    adminGateScreen.classList.add('hidden');
+    adminEditorScreen.classList.remove('hidden');
+    adminExpandedWord = null;
+    document.getElementById('adminSearch').value = '';
+    renderAdminList();
+  } else {
+    fb.textContent = 'כתובת מייל לא מורשית';
+    fb.className = 'feedback';
+    fb.style.color = 'var(--bad)';
+  }
+}
+
+function renderAdminList(){
+  const listEl = document.getElementById('adminList');
+  const q = document.getElementById('adminSearch').value.trim();
+  const ov = loadOverrides();
+  const words = getEffectiveWords();
+  document.getElementById('adminWordCount').textContent = '(' + words.length + ' מילים)';
+
+  const filtered = q ? words.filter(w => w.word.includes(q)) : words;
+
+  listEl.innerHTML = '';
+  if(filtered.length === 0){
+    listEl.innerHTML = '<div class="report-empty">לא נמצאו מילים תואמות</div>';
+    return;
+  }
+
+  filtered.forEach(w=>{
+    const isOverridden = !!ov[w.word];
+    const row = document.createElement('div');
+    row.className = 'admin-word-row';
+
+    const head = document.createElement('div');
+    head.className = 'admin-word-head';
+    head.innerHTML =
+      '<span class="admin-word-name' + (isOverridden ? ' overridden' : '') + '">' + w.word + '</span>' +
+      '<span style="font-size:12px;color:var(--muted)">' + (adminExpandedWord === w.word ? '▲' : '▼') + '</span>';
+    row.appendChild(head);
+
+    const preview = document.createElement('div');
+    preview.className = 'admin-word-preview';
+    preview.textContent = w.clues.join(' • ');
+    row.appendChild(preview);
+
+    if(adminExpandedWord === w.word){
+      const editor = buildAdminEditor(w);
+      row.appendChild(editor);
+    }
+
+    head.addEventListener('click', ()=>{
+      adminExpandedWord = (adminExpandedWord === w.word) ? null : w.word;
+      renderAdminList();
+    });
+    preview.addEventListener('click', ()=>{
+      adminExpandedWord = (adminExpandedWord === w.word) ? null : w.word;
+      renderAdminList();
+    });
+
+    listEl.appendChild(row);
+  });
+}
+
+function buildAdminEditor(w){
+  const editor = document.createElement('div');
+  editor.className = 'admin-word-editor';
+  editor.addEventListener('click', e => e.stopPropagation());
+
+  const clues = [...w.clues];
+
+  function persist(newClues){
+    const ov = loadOverrides();
+    ov[w.word] = { clues: newClues };
+    saveOverrides(ov);
+    renderAdminList();
+  }
+
+  clues.forEach((clueText, i)=>{
+    const row = document.createElement('div');
+    row.className = 'admin-clue-row';
+
+    const num = document.createElement('span');
+    num.className = 'admin-clue-num';
+    num.textContent = (i+1) + '.';
+    row.appendChild(num);
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'admin-clue-input';
+    input.value = clueText;
+    input.addEventListener('change', ()=>{
+      const newClues = [...clues];
+      newClues[i] = input.value.trim() || clueText;
+      persist(newClues);
+    });
+    row.appendChild(input);
+
+    const btnCol = document.createElement('div');
+    btnCol.className = 'admin-reorder-btns';
+    const upBtn = document.createElement('button');
+    upBtn.textContent = '↑';
+    upBtn.disabled = (i === 0);
+    upBtn.addEventListener('click', ()=>{
+      const newClues = [...clues];
+      [newClues[i-1], newClues[i]] = [newClues[i], newClues[i-1]];
+      persist(newClues);
+    });
+    const downBtn = document.createElement('button');
+    downBtn.textContent = '↓';
+    downBtn.disabled = (i === clues.length - 1);
+    downBtn.addEventListener('click', ()=>{
+      const newClues = [...clues];
+      [newClues[i+1], newClues[i]] = [newClues[i], newClues[i+1]];
+      persist(newClues);
+    });
+    btnCol.appendChild(upBtn);
+    btnCol.appendChild(downBtn);
+    row.appendChild(btnCol);
+
+    editor.appendChild(row);
+  });
+
+  const actions = document.createElement('div');
+  actions.className = 'admin-word-actions';
+  const resetBtn = document.createElement('button');
+  resetBtn.className = 'admin-reset-btn';
+  resetBtn.textContent = 'איפוס לברירת מחדל';
+  resetBtn.addEventListener('click', ()=>{
+    const ov = loadOverrides();
+    delete ov[w.word];
+    saveOverrides(ov);
+    renderAdminList();
+  });
+  actions.appendChild(resetBtn);
+  editor.appendChild(actions);
+
+  return editor;
+}
+
+function openExportModal(){
+  const words = getEffectiveWords();
+  const lines = words.map(w=>{
+    const cluesStr = JSON.stringify(w.clues);
+    const acceptsStr = JSON.stringify(w.accepts);
+    return '  { word: ' + JSON.stringify(w.word) + ', clues: ' + cluesStr + ', accepts: ' + acceptsStr + ' },';
+  });
+  const text = 'const WORDS_DEFAULT = [\n' + lines.join('\n') + '\n];';
+  document.getElementById('exportTextarea').value = text;
+  exportModal.classList.remove('hidden');
+}
+
+function copyExportText(){
+  const ta = document.getElementById('exportTextarea');
+  ta.select();
+  try{
+    navigator.clipboard.writeText(ta.value);
+  }catch(e){
+    document.execCommand('copy');
+  }
+}
+</script>
+
+</body>
+</html>
