@@ -1,9 +1,10 @@
-// PUZZLIT — לוגיקה לפי PUZZLIT_Visual_Puzzles.md (מאגר 196 החידות).
-import PUZZLES_RAW from './puzzles.json';
+// PUZZLIT — לוגיקה לפי PUZZLIT_Visual_Puzzles.md. החידות עצמן מגיעות מ-lib/content.js (Supabase).
+import { getPuzzles } from '../../lib/content.js';
 
-export const PUZZLES = [...PUZZLES_RAW].sort((a, b) => a.num - b.num);
+export { getPuzzles };
 export const IMAGE_BASE = `${import.meta.env.BASE_URL}puzzlit/images/`;
-export const imageUrl = p => IMAGE_BASE + p.imageFile;
+// תמונה שהועלתה ממסך הניהול שמורה ככתובת מלאה; 196 התמונות המקוריות הן שמות קבצים באתר.
+export const imageUrl = p => (/^https?:/.test(p.imageFile) ? p.imageFile : IMAGE_BASE + p.imageFile);
 
 // §3: השלב נגזר מ-level. רמות 6 עד 10 מתמזגות לשלב 6.
 export const STAGES = [
@@ -16,7 +17,7 @@ export const STAGES = [
 ];
 export const stageOf = p => Math.min(p.level, 6);
 export const stageGradient = s => `linear-gradient(135deg, ${s.from}, ${s.to})`;
-export const puzzlesInStage = n => PUZZLES.filter(p => stageOf(p) === n);
+export const puzzlesInStage = n => getPuzzles().filter(p => stageOf(p) === n);
 
 // §5: נרמול — הסרת ניקוד, פיסוק וכל הרווחים; איחוד אותיות סופיות.
 const FINALS = { 'ך': 'כ', 'ם': 'מ', 'ן': 'נ', 'ף': 'פ', 'ץ': 'צ' };

@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Check, ChevronLeft, Lightbulb, Mic, RotateCcw, Shuffle, Delete } from 'lucide-react';
 import {
-  PUZZLES, STAGES, stageOf, stageGradient, puzzlesInStage,
+  getPuzzles, STAGES, stageOf, stageGradient, puzzlesInStage,
   imageUrl, checkAnswer, normalize, xpFor,
 } from './logic.js';
 import { store } from '../../lib/store.js';
@@ -79,13 +79,13 @@ export default function Puzzlit({ paused, onScore, setInProgress }) {
 
 // ------------------------------------------------------------------ home
 function Home({ progress, onStage }) {
-  const solvedCount = Object.keys(progress.solved).length;
+  const solvedCount = getPuzzles().filter(p => progress.solved[p.id]).length;
   return (
     <>
       <div className="flex items-end justify-between mb-5">
         <div>
           <div className="text-3xl font-black tracking-tight">PUZZLIT</div>
-          <div className="text-sm text-[#6B6B6B]">{solvedCount} מתוך {PUZZLES.length} חידות נפתרו</div>
+          <div className="text-sm text-[#6B6B6B]">{solvedCount} מתוך {getPuzzles().length} חידות נפתרו</div>
         </div>
         <div className="text-left">
           <div className="text-[11px] text-[#6B6B6B] font-semibold">XP</div>

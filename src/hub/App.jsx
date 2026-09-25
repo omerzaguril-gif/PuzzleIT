@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { ChevronLeft, ChevronRight, Trophy, User, Wrench } from 'lucide-react';
 import { store, isShared } from '../lib/store.js';
+import { loadContent } from '../lib/content.js';
 import { GAME_LIST, GAMES_BY_ID } from './games.js';
 import GameShell from './GameShell.jsx';
 import Admin from './Admin.jsx';
@@ -9,13 +10,17 @@ export default function App() {
   const [profile, setProfile] = useState(null);
   const [total, setTotal] = useState(0);
   const [error, setError] = useState(null);
-  const [screen, setScreen] = useState({ name: 'home' });
+  // חזרה מקישור הכניסה במייל (?admin=1) פותחת ישר את מסך הניהול.
+  const [screen, setScreen] = useState(() =>
+    new URLSearchParams(window.location.search).has('admin') ? { name: 'admin' } : { name: 'home' });
 
   useEffect(() => {
     (async () => {
       try {
-        setProfile(await store.init());
+        const [p] = await Promise.all([store.init(), loadContent().catch(() => null)]);
         setTotal(await store.getTotal());
+        setProfile(p);
+        if (window.location.search) window.history.replaceState(null, '', window.location.pathname);
       } catch (e) {
         setError(e.message || String(e));
       }

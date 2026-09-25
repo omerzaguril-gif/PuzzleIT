@@ -8,7 +8,7 @@
 //   - ההתקדמות נשמרת לכל שרשרת: יציאה באמצע עוצרת את השעון, וחזרה ממשיכה מאותה נקודה.
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Lightbulb, Check, Trophy, Clock, X, ChevronLeft } from 'lucide-react';
-import { CHAINS } from './chains.js';
+import { getChains } from '../../lib/content.js';
 import { SFX } from './sfx.js';
 import { store } from '../../lib/store.js';
 import { chainToHub } from '../../lib/scoring.js';
@@ -23,6 +23,7 @@ const BG = `radial-gradient(ellipse at top,#1B1B3A 0%,transparent 50%),
 const GRAD = 'linear-gradient(135deg,#22D3EE,#8B5CF6)';
 
 export default function Chain({ paused, onScore, setInProgress }) {
+  const CHAINS = getChains();
   const [progress, setProgress] = useState(null); // { chains: { [id]: savedState } }
   const [current, setCurrent] = useState(null);   // index into CHAINS, null = list
 
@@ -76,6 +77,7 @@ export default function Chain({ paused, onScore, setInProgress }) {
 }
 
 function ChainList({ progress, onPick }) {
+  const CHAINS = getChains();
   const doneCount = CHAINS.filter(c => progress.chains[c.id]?.finished).length;
   return (
     <div className="max-w-md mx-auto">

@@ -19,6 +19,7 @@ const SUPABASE_URL = envUrl === 'off' ? '' : (envUrl || DEFAULT_URL).replace(/\/
 const SUPABASE_KEY = (import.meta.env.VITE_SUPABASE_ANON_KEY || '').trim() || DEFAULT_KEY;
 
 export const isShared = Boolean(SUPABASE_URL && SUPABASE_KEY);
+export const supabase = isShared ? createClient(SUPABASE_URL, SUPABASE_KEY) : null;
 
 // שם גנרי למשתמש שלא נרשם: user + 10 ספרות.
 export function genericName() {
@@ -85,7 +86,7 @@ function createLocalStore() {
 
 // ---------------------------------------------------------------- supabase
 function createSupabaseStore() {
-  const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+  const sb = supabase;
   let userId = null;
 
   return {

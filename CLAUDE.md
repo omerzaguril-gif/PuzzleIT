@@ -49,7 +49,7 @@
 - 449 מילים, 5 רמזים לכל מילה, מהספציפי לכללי. כל רמז הוא מילה בודדת ואף רמז לא מכיל את שורש התשובה.
 - קבלת תשובה: התאמה מדויקת, רשימת `accepts`, או רבים אוטומטי (ים/ות, ה→ות).
 - מודל יציאה משהה את הטיימר. מסך סיום עם דוח מלא לכל מילה.
-- מסך ניהול רמזים: נעול לאימייל `omerzaguril@gmail.com`, override ב-localStorage (`wordCrackOverrides_v1`), ייצוא של כל המאגר.
+- מסך ניהול רמזים: נעול לאימייל `omerzaguril@gmail.com`. (מ-25.9.2026: העריכות נשמרות ב-Supabase ולא ב-localStorage, לבקשת עומר.)
 
 ### PUZZLIT
 - נרמול תשובה: הסרת ניקוד, פיסוק ורווחים, ו-lowercase. Levenshtein ≤ `fuzzyTolerance` נחשב נכון. בקוד: עד tolerance+2 מציג "כמעט!" (ב-spec כתוב +1, ראה `docs/HANDOFF.md`).
@@ -76,6 +76,9 @@ src/games/puzzlit   ← Puzzlit.jsx, logic.js, puzzles.json (196 החידות)
 public/puzzlit/images ← 196 התמונות
 src/lib/            ← store.js (Supabase או localStorage), scoring.js (המרה לניקוד Hub)
 supabase/schema.sql ← טבלאות profiles / score_events / game_progress + view leaderboard
+supabase/admin.sql  ← תוכן: puzzles / chains / wordcrack_words, is_admin(), bucket puzzle-images
+src/lib/content.js  ← טעינת התוכן מ-Supabase (seed מהקבצים אם הטבלה ריקה) + שמירות המנהל
+src/lib/validate.js ← ולידציה לפני שמירה במסך הניהול
 scripts/check-data.mjs ← בדיקת כל המאגרים (`npm run check-data`)
 ```
 הרצה: `npm install` ואז `npm run dev`. האפליקציה מחוברת ל-Supabase כברירת מחדל (URL ומפתח ציבורי ב-`src/lib/store.js`). `VITE_SUPABASE_URL=off` = מצב מקומי. אתר חי: https://puzzle-it-seven.vercel.app (Vercel, מתעדכן אוטומטית מכל push).
@@ -92,6 +95,12 @@ scripts/check-data.mjs ← בדיקת כל המאגרים (`npm run check-data`)
 - PUZZLIT: שני הרמזים זמינים בכל השלבים (−20% כל אחד). כל השלבים פתוחים (בלי נעילה). XP לפי שלב: 100/200/400/700/1200/1800. נקודות רק בפתרון ראשון של חידה.
 - PUZZLIT: מחסן אותיות = האותיות המדויקות של `primary`, מעורבבות, בלי אותיות מסיחות. אפשר גם להקליד מהמקלדת ולומר בקול (Web Speech API, `he-IL`).
 - שרשרת: מסך בחירה של כל 31 השרשראות. נקודות רק בהשלמה ראשונה. יציאה באמצע עוצרת את השעון וההתקדמות נשמרת.
+
+## מסך הניהול (25.9.2026)
+- כניסה בקישור במייל (Supabase magic link) → `?admin=1` פותח את המסך. רק `omerzaguril@gmail.com` (בקוד וב-`is_admin()` ב-SQL).
+- התוכן חי ב-Supabase. הכניסה הראשונה של המנהל מעלה את התוכן ההתחלתי (seed) לטבלאות ריקות.
+- קבצי ה-seed (`puzzles.json`, `chains.js`, `words.js`) לא מתעדכנים מעריכות. כפתור "גיבוי" מוריד JSON של כל התוכן.
+- תמונות חדשות עולות ל-bucket `puzzle-images`; השדה `image` שומר כתובת מלאה. 196 המקוריות נשארות ב-`public/`.
 
 ## עקרונות עבודה
 - כשעובדים על משחק ספציפי, נוגעים רק בקבצים שלו. כשעובדים על ה-Hub, קוראים את שלושת המשחקים.
