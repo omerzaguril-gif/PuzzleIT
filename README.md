@@ -10,6 +10,6 @@ npm run build        # בנייה ל-dist/
 npm run check-data   # בדיקת המאגרים
 ```
 
-בלי הגדרות, הכל נשמר בדפדפן (מצב מקומי). לליגה משותפת: ראו `supabase/schema.sql` ו-`.env.example`.
+האפליקציה מחוברת ל-Supabase (ליגה משותפת). הסכמה: `supabase/schema.sql`. למצב מקומי בלבד: ראו `.env.example`.
 
 ההוראות המלאות לעבודה על הפרויקט: `CLAUDE.md`. היסטוריה והחלטות: `docs/HANDOFF.md`.

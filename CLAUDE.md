@@ -78,7 +78,7 @@ src/lib/            ← store.js (Supabase או localStorage), scoring.js (המ�
 supabase/schema.sql ← טבלאות profiles / score_events / game_progress + view leaderboard
 scripts/check-data.mjs ← בדיקת כל המאגרים (`npm run check-data`)
 ```
-הרצה: `npm install` ואז `npm run dev`. בלי `.env` האפליקציה עובדת במצב מקומי (localStorage).
+הרצה: `npm install` ואז `npm run dev`. האפליקציה מחוברת ל-Supabase כברירת מחדל (URL ומפתח ציבורי ב-`src/lib/store.js`). `VITE_SUPABASE_URL=off` = מצב מקומי. אתר חי: https://puzzle-it-seven.vercel.app (Vercel, מתעדכן אוטומטית מכל push).
 
 ## החלטות שעומר אישר (25.9.2026)
 - **PUZZLIT:** מאגר 196 החידות (`PUZZLIT_Visual_Puzzles.md`) הוא הגרסה המעודכנת. `PuzzlitApp.jsx` ופרומט הבנייה הם אב-טיפוס ישן. בהמשך עומר ירצה להוסיף ולהסיר חידות ממסך הניהול.

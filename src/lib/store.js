@@ -2,15 +2,21 @@
 // שכבת הנתונים של ה-Hub: משתמש, ניקוד, ליגה והתקדמות בכל משחק.
 // ============================================================
 // שני מצבים עם אותו API:
-//   - Supabase: כשמוגדרים VITE_SUPABASE_URL ו-VITE_SUPABASE_ANON_KEY. ליגה משותפת לכל המשתמשים.
-//   - מקומי: בלי הגדרות. הכל נשמר ב-localStorage של הדפדפן, והליגה מציגה רק את המכשיר הזה.
+//   - Supabase (ברירת המחדל): הפרויקט של PuzzleIT. ליגה משותפת לכל המשתמשים.
+//   - מקומי: VITE_SUPABASE_URL=off. הכל נשמר ב-localStorage של הדפדפן, והליגה מציגה רק את המכשיר הזה.
 // הסכמה של Supabase נמצאת ב-supabase/schema.sql.
 
 import { createClient } from '@supabase/supabase-js';
 
+// המפתח הציבורי (publishable) נועד לדפדפן ובטוח לשמור בקוד; ההרשאות נאכפות ב-RLS.
+// את המפתח הסודי (secret / service_role) אסור לשים כאן לעולם.
+const DEFAULT_URL = 'https://fojkgkxhnxtsvwsjaktn.supabase.co';
+const DEFAULT_KEY = 'sb_publishable_j8W2AfCwYBAok-fDFT6qRg_mdStGyOz';
+
+const envUrl = (import.meta.env.VITE_SUPABASE_URL || '').trim();
 // מקבל גם כתובת שהודבקה עם /rest/v1/ בסוף (כמו שמופיע במסך ה-API של Supabase).
-const SUPABASE_URL = (import.meta.env.VITE_SUPABASE_URL || '').trim().replace(/\/rest\/v1\/?$/, '').replace(/\/+$/, '');
-const SUPABASE_KEY = (import.meta.env.VITE_SUPABASE_ANON_KEY || '').trim();
+const SUPABASE_URL = envUrl === 'off' ? '' : (envUrl || DEFAULT_URL).replace(/\/rest\/v1\/?$/, '').replace(/\/+$/, '');
+const SUPABASE_KEY = (import.meta.env.VITE_SUPABASE_ANON_KEY || '').trim() || DEFAULT_KEY;
 
 export const isShared = Boolean(SUPABASE_URL && SUPABASE_KEY);
 
