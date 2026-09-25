@@ -36,7 +36,7 @@ export default function App() {
   const home = () => setScreen({ name: 'home' });
 
   if (error) {
-    return <Center><div className="text-center"><div className="text-xl font-bold mb-2">שגיאה בטעינה</div><div className="text-sm text-[#7A756C]" dir="ltr">{error}</div></div></Center>;
+    return <Center><div className="text-center"><div className="text-xl font-bold mb-2">לא הצלחנו להתחבר לשרת</div><div className="text-sm text-[#7A756C]" dir="ltr">{error}</div></div></Center>;
   }
   if (!profile) return <Center><div className="text-[#7A756C]">טוען…</div></Center>;
 
@@ -83,8 +83,12 @@ export default function App() {
           <Trophy className="w-5 h-5" /> טבלת הליגה
         </button>
 
+        <div className="text-center text-xs text-[var(--hub-muted)] mt-4">
+          {isShared ? '🟢 מחובר לליגה המשותפת' : '⚪ מצב מקומי: הניקוד נשמר רק במכשיר הזה'}
+        </div>
+
         <button onClick={() => setScreen({ name: 'admin' })}
-          className="mx-auto mt-6 flex items-center gap-1.5 text-sm text-[var(--hub-muted)]">
+          className="mx-auto mt-4 flex items-center gap-1.5 text-sm text-[var(--hub-muted)]">
           <Wrench className="w-3.5 h-3.5" /> ניהול
         </button>
       </div>

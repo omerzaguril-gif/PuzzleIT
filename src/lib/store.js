@@ -8,8 +8,9 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+// מקבל גם כתובת שהודבקה עם /rest/v1/ בסוף (כמו שמופיע במסך ה-API של Supabase).
+const SUPABASE_URL = (import.meta.env.VITE_SUPABASE_URL || '').trim().replace(/\/rest\/v1\/?$/, '').replace(/\/+$/, '');
+const SUPABASE_KEY = (import.meta.env.VITE_SUPABASE_ANON_KEY || '').trim();
 
 export const isShared = Boolean(SUPABASE_URL && SUPABASE_KEY);
 
