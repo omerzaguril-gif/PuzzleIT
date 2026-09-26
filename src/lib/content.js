@@ -17,18 +17,20 @@ const cache = {
   words: WORDS_SEED,
 };
 
-export const getPuzzles = () => cache.puzzles;
+// חידות בארכיון נשמרות בשרת אבל לא מוצגות במשחק.
+export const getPuzzles = () => cache.puzzles.filter(p => !p.archived);
+export const getAllPuzzles = () => cache.puzzles;
 export const getChains = () => cache.chains;
 export const getWords = () => cache.words;
 
 // ---- row <-> object
 export const puzzleFromRow = r => ({
   id: r.id, num: r.num, level: r.level, imageFile: r.image,
-  answer: r.answer, hints: r.hints, explanation: r.explanation,
+  answer: r.answer, hints: r.hints, explanation: r.explanation, archived: !!r.archived,
 });
 export const puzzleToRow = p => ({
   id: p.id, num: p.num, level: p.level, image: p.imageFile,
-  answer: p.answer, hints: p.hints, explanation: p.explanation,
+  answer: p.answer, hints: p.hints, explanation: p.explanation, archived: !!p.archived,
   updated_at: new Date().toISOString(),
 });
 export const chainFromRow = r => ({ id: r.id, sort: r.sort, difficulty: r.difficulty, theme: r.theme, words: r.words });
@@ -78,6 +80,9 @@ export async function importSeed(kind) {
 export async function savePuzzle(p) {
   await check(supabase.from('puzzles').upsert(puzzleToRow(p)));
   cache.puzzles = [...cache.puzzles.filter(x => x.id !== p.id), p].sort(byNum);
+}
+export async function setPuzzleArchived(p, archived) {
+  await savePuzzle({ ...p, archived });
 }
 export async function deletePuzzle(id) {
   await check(supabase.from('puzzles').delete().eq('id', id));

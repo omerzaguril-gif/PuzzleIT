@@ -1,11 +1,11 @@
 // מסך ניהול: חידות ויזואליות, פיצוח מילים ושרשראות. הכל נשמר ב-Supabase ומופיע לכל השחקנים מיד.
 // כניסה: קישור במייל (Supabase Auth). הרשאת כתיבה נאכפת בשרת (RLS, public.is_admin()).
 import React, { useEffect, useMemo, useState } from 'react';
-import { ArrowDown, ArrowUp, ChevronRight, Download, LogOut, Plus, Search, Trash2 } from 'lucide-react';
+import { Archive, ArchiveRestore, ArrowDown, ArrowUp, ChevronRight, Download, LogOut, Plus, Search, Trash2 } from 'lucide-react';
 import { supabase } from '../lib/store.js';
 import {
-  getPuzzles, getChains, getWords, loadContent, importSeed,
-  savePuzzle, deletePuzzle, uploadPuzzleImage, saveChain, deleteChain, saveWord, deleteWord,
+  getAllPuzzles, getChains, getWords, loadContent, importSeed,
+  savePuzzle, deletePuzzle, setPuzzleArchived, uploadPuzzleImage, saveChain, deleteChain, saveWord, deleteWord,
 } from '../lib/content.js';
 import { validatePuzzle, validateWord, validateChain, cleanSpaces, suggestLink } from '../lib/validate.js';
 import { imageUrl, stageOf } from '../games/puzzlit/logic.js';
@@ -117,7 +117,7 @@ function Panel({ email, onSignOut }) {
   }, []);
 
   const backup = () => {
-    const data = { exportedAt: new Date().toISOString(), puzzles: getPuzzles(), chains: getChains(), words: getWords() };
+    const data = { exportedAt: new Date().toISOString(), puzzles: getAllPuzzles(), chains: getChains(), words: getWords() };
     const blob = new Blob([JSON.stringify(data, null, 1)], { type: 'application/json' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
@@ -206,23 +206,35 @@ function PuzzlesAdmin() {
   const [, bump] = useState(0);
   const [q, setQ] = useState('');
   const [editing, setEditing] = useState(null); // puzzle object or 'new'
-  const all = getPuzzles();
+  const [show, setShow] = useState('active');     // active | archived
+  const all = getAllPuzzles();
+  const archivedCount = all.filter(p => p.archived).length;
   const list = useMemo(() => {
     const t = q.trim();
-    return t ? all.filter(p => String(p.num) === t || p.answer.primary.includes(t)) : all;
-  }, [all, q]);
+    const base = all.filter(p => (show === 'archived' ? p.archived : !p.archived));
+    return t ? base.filter(p => String(p.num) === t || p.answer.primary.includes(t)) : base;
+  }, [all, q, show]);
 
   if (editing) {
     return <PuzzleEditor puzzle={editing === 'new' ? null : editing} onDone={() => { setEditing(null); bump(n => n + 1); }} />;
   }
   return (
     <>
-      <Toolbar q={q} setQ={setQ} onAdd={() => setEditing('new')} addLabel="חידה חדשה" count={all.length} />
+      <Toolbar q={q} setQ={setQ} onAdd={() => setEditing('new')} addLabel="חידה חדשה" count={list.length} />
+      <div className="flex gap-2 mb-3">
+        {[['active', `פעילות (${all.length - archivedCount})`], ['archived', `ארכיון (${archivedCount})`]].map(([id, label]) => (
+          <button key={id} onClick={() => setShow(id)}
+            className={`px-3 py-1.5 rounded-lg text-sm font-bold border ${show === id ? 'bg-[var(--hub-ink)] text-white border-transparent' : 'bg-white border-[var(--hub-line)]'}`}>
+            {label}
+          </button>
+        ))}
+      </div>
+      {list.length === 0 && <Card>אין חידות כאן.</Card>}
       <div className="space-y-2">
         {list.map(p => (
           <button key={p.id} onClick={() => setEditing(p)}
             className="w-full flex items-center gap-3 bg-white border border-[var(--hub-line)] rounded-2xl p-2 text-right">
-            <img src={imageUrl(p)} alt="" loading="lazy" className="w-14 h-14 rounded-xl object-cover" />
+            <img src={imageUrl(p)} alt="" loading="lazy" className={`w-14 h-14 rounded-xl object-cover ${p.archived ? 'opacity-40 grayscale' : ''}`} />
             <div className="flex-1 min-w-0">
               <div className="font-bold truncate">{p.answer.primary}</div>
               <div className="text-xs text-[var(--hub-muted)]">#{p.num} · רמה {p.level} · שלב {stageOf(p)}</div>
@@ -235,7 +247,7 @@ function PuzzlesAdmin() {
 }
 
 function PuzzleEditor({ puzzle, onDone }) {
-  const all = getPuzzles();
+  const all = getAllPuzzles();
   const nextNum = Math.max(0, ...all.map(p => p.num)) + 1;
   const [f, setF] = useState(() => ({
     imageFile: puzzle?.imageFile || '',
@@ -276,6 +288,7 @@ function PuzzleEditor({ puzzle, onDone }) {
       answer: { primary, accepted: lines(f.accepted) },
       hints: { 1: cleanSpaces(f.hint1), 2: cleanSpaces(f.hint2) },
       explanation: { steps: lines(f.steps), finalPhrase: cleanSpaces(f.finalPhrase) || primary },
+      archived: !!puzzle?.archived,
     };
     const errs = validatePuzzle(p, all);
     setErrors(errs);
@@ -290,6 +303,12 @@ function PuzzleEditor({ puzzle, onDone }) {
     }
   };
 
+  const toggleArchive = async () => {
+    setBusy(puzzle.archived ? 'מחזיר…' : 'מעביר לארכיון…');
+    try { await setPuzzleArchived(puzzle, !puzzle.archived); onDone(); }
+    catch (err) { setErrors(['הפעולה נכשלה: ' + err.message]); setBusy(''); }
+  };
+
   const remove = async () => {
     setBusy('מוחק…');
     try { await deletePuzzle(puzzle.id); onDone(); } catch (err) { setErrors(['המחיקה נכשלה: ' + err.message]); setBusy(''); }
@@ -299,7 +318,10 @@ function PuzzleEditor({ puzzle, onDone }) {
 
   return (
     <div className="bg-white border border-[var(--hub-line)] rounded-2xl p-4">
-      <div className="font-black text-lg mb-3">{puzzle ? `עריכת חידה #${puzzle.num}` : 'חידה חדשה'}</div>
+      <div className="font-black text-lg mb-3">
+        {puzzle ? `עריכת חידה #${puzzle.num}` : 'חידה חדשה'}
+        {puzzle?.archived && <span className="ms-2 text-xs font-bold px-2 py-0.5 rounded-md bg-[#EDE8DD] align-middle">בארכיון</span>}
+      </div>
       <div className="flex gap-3 items-center mb-3">
         {preview
           ? <img src={preview} alt="" className="w-28 h-28 rounded-xl object-cover border border-[var(--hub-line)]" />
@@ -328,6 +350,11 @@ function PuzzleEditor({ puzzle, onDone }) {
         <button className={btnDark} onClick={save} disabled={!!busy}>{busy || 'שמירה'}</button>
         <button className={btnLight} onClick={onDone} disabled={!!busy}>ביטול</button>
         <span className="flex-1" />
+        {puzzle && (
+          <button className={btnLight + ' flex items-center gap-1'} onClick={toggleArchive} disabled={!!busy}>
+            {puzzle.archived ? <><ArchiveRestore className="w-4 h-4" /> החזרה מהארכיון</> : <><Archive className="w-4 h-4" /> העברה לארכיון</>}
+          </button>
+        )}
         {puzzle && <DeleteButton onConfirm={remove} />}
       </div>
     </div>

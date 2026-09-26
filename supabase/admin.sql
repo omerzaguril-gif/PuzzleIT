@@ -21,6 +21,7 @@ create table if not exists public.puzzles (
   answer       jsonb not null,                  -- { primary, accepted[] }
   hints        jsonb not null,                  -- { "1": "...", "2": "..." }
   explanation  jsonb not null,                  -- { steps[], finalPhrase }
+  archived     boolean not null default false,  -- בארכיון = לא מוצגת במשחק
   updated_at   timestamptz not null default now(),
   constraint puzzles_answer_hebrew check ((answer ->> 'primary') ~ '^[א-ת ]+$')
 );
@@ -69,3 +70,6 @@ create policy "puzzle images admin update" on storage.objects for update
   using (bucket_id = 'puzzle-images' and public.is_admin());
 create policy "puzzle images admin delete" on storage.objects for delete
   using (bucket_id = 'puzzle-images' and public.is_admin());
+
+-- נוסף ב-26.9.2026 (לפרויקטים שהריצו את הקובץ לפני כן):
+alter table public.puzzles add column if not exists archived boolean not null default false;
