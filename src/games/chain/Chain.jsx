@@ -161,21 +161,27 @@ function ChainGame({ chain, index, saved, onSave, paused, onScore, setInProgress
 
   useEffect(() => { if (!paused) inputRef.current?.focus(); }, [step, loaded, paused]);
 
+  // Current word solved (typed correctly, or fully revealed by hints): move to the next one.
+  const advance = useCallback((totalSeconds, totalHints) => {
+    SFX.correct();
+    clearGuess(); setTried([]);
+    const next = step + 1;
+    setStep(next); setRevealed(1);
+    if (next >= chain.words.length) {
+      SFX.finish();
+      const pts = chainToHub({ seconds: totalSeconds, blanks: chain.words.length - 1 });
+      setHubPoints(pts);
+      onScore(pts, { chainId: chain.id, seconds: Math.round(totalSeconds * 10) / 10, hints: totalHints, misses });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chain, step, misses, onScore]);
+
   const submit = useCallback(() => {
     if (done || paused || !guess.trim()) return;
     const attempt = prefix + guess;
 
     if (strip(attempt) === strip(target)) {
-      SFX.correct();
-      clearGuess(); setTried([]);
-      const next = step + 1;
-      setStep(next); setRevealed(1);
-      if (next >= chain.words.length) {
-        SFX.finish();
-        const pts = chainToHub({ seconds: elapsed, blanks: chain.words.length - 1 });
-        setHubPoints(pts);
-        onScore(pts, { chainId: chain.id, seconds: Math.round(elapsed * 10) / 10, hints, misses });
-      }
+      advance(elapsed, hints);
       return;
     }
 
@@ -188,7 +194,7 @@ function ChainGame({ chain, index, saved, onSave, paused, onScore, setInProgress
     setShake(true);
     window.setTimeout(() => setShake(false), 400);
     clearGuess();
-  }, [chain, done, paused, guess, prefix, step, target, elapsed, hints, misses, onScore]);
+  }, [done, paused, guess, prefix, target, elapsed, hints, advance]);
 
   const useHint = useCallback(() => {
     if (done || paused || revealed >= target.length) return;
@@ -203,7 +209,9 @@ function ChainGame({ chain, index, saved, onSave, paused, onScore, setInProgress
     setHints(h => h + 1);
     setElapsed(e => e + HINT_PENALTY);
     inputRef.current?.focus();
-  }, [done, paused, revealed, target]);
+    // The hint revealed the last letter: the word counts as solved.
+    if (revealed + 1 >= target.length) advance(elapsed + HINT_PENALTY, hints + 1);
+  }, [done, paused, revealed, target, elapsed, hints, advance]);
 
   const solvedCount = step - 1;
   const totalBlanks = chain.words.length - 1;
