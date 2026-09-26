@@ -1,5 +1,5 @@
 // שרשרת — מבוסס על games/chain/ChainItHebrew.jsx. לוגיקת המשחק (אורך מילה לא נחשף, קלט אחרי הקידומת,
-// רמז = אות + 3 שניות, צ'יפים של ניחושים שגויים, displayWord) הועתקה כמו שהיא.
+// רמז = אות + שניות קנס, צ'יפים של ניחושים שגויים, displayWord) הועתקה כמו שהיא.
 // תוספות:
 //   - מסך רשימה של כל השרשראות, כולן פתוחות (עומר, 25.9.2026: אין כרגע הגבלה יומית).
 //     הנושא (theme) לא מוצג בכוונה, כי הוא מסגיר מילים מהשרשרת.
@@ -13,7 +13,7 @@ import { SFX } from './sfx.js';
 import { store } from '../../lib/store.js';
 import { chainToHub } from '../../lib/scoring.js';
 
-const HINT_PENALTY = 3;
+const HINT_PENALTY = 5; // עומר, 26.9.2026 (היה 3)
 
 const strip = s => (s || '').trim().replace(/[֑-ׇ]/g, '').replace(/[^א-ת]/g, '');
 const fmt = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
