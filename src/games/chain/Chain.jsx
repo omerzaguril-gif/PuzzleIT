@@ -120,6 +120,22 @@ function ChainGame({ chain, index, saved, onSave, paused, onScore, setInProgress
   const [elapsed, setElapsed] = useState(saved?.elapsed ?? 0);
   const [hubPoints, setHubPoints] = useState(saved?.hubPoints ?? null);
   const inputRef = useRef(null);
+  // How many letters of the known prefix the player has re-typed (and we dropped) at the
+  // start of the current attempt. Lets "ים" be typed in full after the given "י" without
+  // becoming "יים", while a real double letter (ממשלה after "מ") still works: only the
+  // first re-typed copy of each known letter is dropped.
+  const skipRef = useRef(0);
+  const clearGuess = () => { skipRef.current = 0; setGuess(''); };
+  const onType = v => {
+    if (guess === '') {
+      let i = 0;
+      let k = skipRef.current;
+      while (i < v.length && k < prefix.length && v[i] === prefix[k]) { i++; k++; }
+      skipRef.current = k;
+      v = v.slice(i);
+    }
+    setGuess(v);
+  };
 
   const done = step >= chain.words.length;
   const target = done ? null : chain.words[step].word;
@@ -151,7 +167,7 @@ function ChainGame({ chain, index, saved, onSave, paused, onScore, setInProgress
 
     if (strip(attempt) === strip(target)) {
       SFX.correct();
-      setGuess(''); setTried([]);
+      clearGuess(); setTried([]);
       const next = step + 1;
       setStep(next); setRevealed(1);
       if (next >= chain.words.length) {
@@ -171,7 +187,7 @@ function ChainGame({ chain, index, saved, onSave, paused, onScore, setInProgress
     setTried(t => (t.includes(attempt) ? t : [...t, attempt]));
     setShake(true);
     window.setTimeout(() => setShake(false), 400);
-    setGuess('');
+    clearGuess();
   }, [chain, done, paused, guess, prefix, step, target, elapsed, hints, misses, onScore]);
 
   const useHint = useCallback(() => {
@@ -181,6 +197,7 @@ function ChainGame({ chain, index, saved, onSave, paused, onScore, setInProgress
     // If the player already typed the letter that's about to be revealed as
     // part of the fixed prefix, drop it from their in-progress continuation
     // instead of discarding everything they've typed so far.
+    skipRef.current = 0;
     setGuess(g => (g && g[0] === nextLetter) ? g.slice(1) : '');
     setRevealed(r => r + 1);
     setHints(h => h + 1);
@@ -240,11 +257,30 @@ function ChainGame({ chain, index, saved, onSave, paused, onScore, setInProgress
               return (
                 <div key={i}>
                   <div className={`flex justify-center ${current ? 'pop' : ''}`}>
-                    <div className="min-w-[130px] px-5 h-12 rounded-2xl grid place-items-center
-                                    text-xl font-black tracking-wide transition-all"
-                      style={styleObj}>
-                      {display}
-                    </div>
+                    {current ? (
+                      // The player types straight into the current pill, right after the
+                      // known letters. The pill only grows with what was typed, so the
+                      // word's length is never revealed.
+                      <div onClick={() => inputRef.current?.focus()}
+                        className={`min-w-[130px] px-5 h-12 rounded-2xl flex items-center justify-center cursor-text
+                                    text-xl font-black tracking-wide transition-all ${shake ? 'shake' : ''}`}
+                        style={styleObj}>
+                        <span className="select-none">{prefix}</span>
+                        <input ref={inputRef} value={guess} dir="rtl" aria-label="השלמת המילה"
+                          autoComplete="off" autoCorrect="off" autoCapitalize="off" spellCheck={false}
+                          onChange={e => onType(e.target.value)}
+                          onKeyDown={e => e.key === 'Enter' && submit()}
+                          style={{ width: `${Math.max(guess.length, 1) + 0.3}ch` }}
+                          className="bg-transparent outline-none text-xl font-black text-white tracking-wide min-w-[0.6ch] p-0" />
+                        {!guess && <span className="text-white/40 select-none">…</span>}
+                      </div>
+                    ) : (
+                      <div className="min-w-[130px] px-5 h-12 rounded-2xl grid place-items-center
+                                      text-xl font-black tracking-wide transition-all"
+                        style={styleObj}>
+                        {display}
+                      </div>
+                    )}
                   </div>
                   {(solved || entry.given) && (
                     <div className="text-center text-[11px] text-white/40 mt-1">
@@ -292,22 +328,6 @@ function ChainGame({ chain, index, saved, onSave, paused, onScore, setInProgress
                   ))}
                 </div>
               )}
-
-              {/* The revealed prefix is fixed, inline text inside the same box —
-                  the player types the rest of the word directly after it,
-                  continuing the existing letters rather than starting a
-                  separate blank field. */}
-              <div dir="rtl" onClick={() => inputRef.current?.focus()}
-                className={`w-full px-5 py-4 rounded-2xl flex items-center gap-0.5
-                           bg-white/[0.06] border-2 border-white/10 focus-within:border-white/30 cursor-text
-                           ${shake ? 'shake' : ''}`}>
-                <span className="text-lg font-black text-white tracking-wide select-none">{prefix}</span>
-                <input ref={inputRef} value={guess} dir="rtl"
-                  onChange={e => setGuess(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && submit()}
-                  style={{ width: `${Math.max(guess.length, 1) + 0.5}ch` }}
-                  className="bg-transparent outline-none text-lg font-black text-white tracking-wide min-w-[0.6ch]" />
-              </div>
 
               <div className="flex gap-2.5">
                 <button onClick={submit} disabled={!guess.trim()}
